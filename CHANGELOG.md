@@ -1,11 +1,8 @@
 # Changelog
 
-## Unreleased
-
-- Named the extension On Your Behalf (OYB) for its first public repository release.
-
 ## 0.2.1
 
+- Named the extension On Your Behalf (OYB) for its first public repository release.
 - Added staged scan, generation, and fill progress instead of a static waiting state.
 - Added immediate field-count and provider feedback while answers are generated.
 - Added elapsed-time reporting and a clearer message for longer generations.
