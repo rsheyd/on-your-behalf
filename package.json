@@ -1,0 +1,9 @@
+{
+  "name": "on-your-behalf",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/background.js && node --check src/content.js && node --check src/form-core.js && node --check src/options.js && node --check src/popup.js && node --check src/prompt.js && node --check src/providers.js"
+  }
+}

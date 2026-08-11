@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>On Your Behalf Settings</title>
+    <link rel="stylesheet" href="options.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="eyebrow">On Your Behalf</p>
+        <h1>Settings</h1>
+        <p>Your profile and API key stay in this browser's extension storage.</p>
+      </header>
+      <form id="settings-form">
+        <section>
+          <label for="profile">Your profile</label>
+          <p class="help">Write naturally. Include only facts you want the extension to use on forms.</p>
+          <textarea id="profile" rows="15" placeholder="My name is…&#10;I live in…&#10;My professional background is…"></textarea>
+        </section>
+        <section class="provider-grid">
+          <div>
+            <label for="provider">AI provider</label>
+            <select id="provider">
+              <option value="gemini">Google Gemini</option>
+              <option value="openai">OpenAI</option>
+              <option value="anthropic">Anthropic</option>
+            </select>
+          </div>
+          <div>
+            <label for="model">Model</label>
+            <input id="model" type="text" spellcheck="false">
+          </div>
+        </section>
+        <section>
+          <label for="api-key">API key</label>
+          <input id="api-key" type="password" autocomplete="off" spellcheck="false">
+          <p class="help">The key is sent only to the selected provider when you choose to fill a page.</p>
+        </section>
+        <div class="actions">
+          <button type="submit">Save settings</button>
+          <span id="status" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

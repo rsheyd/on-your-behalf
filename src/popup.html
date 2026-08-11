@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>On Your Behalf</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main>
+      <div class="heading">
+        <div>
+          <h1>On Your Behalf</h1>
+          <p>Fill, then review on the page.</p>
+        </div>
+        <button id="settings" class="text-button" type="button">Settings</button>
+      </div>
+      <button id="fill" class="primary" type="button">Scan and fill this page</button>
+      <div id="progress" class="progress" hidden aria-hidden="true">
+        <div id="progress-bar" class="progress-bar"></div>
+      </div>
+      <p id="status" class="status" aria-live="polite">Nothing is submitted automatically.</p>
+      <section id="unresolved" class="unresolved" hidden>
+        <h2 id="unresolved-title">Profile gaps</h2>
+        <ul id="unresolved-list"></ul>
+        <button id="edit-profile" class="secondary" type="button">Open profile settings</button>
+      </section>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
