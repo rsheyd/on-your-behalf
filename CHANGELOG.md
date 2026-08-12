@@ -2,7 +2,7 @@
 
 ## 0.3.0
 
-- Added local resume import from DOCX, Markdown, plain text, and text-based PDF files.
+- Added local import from DOCX, Markdown, plain text, and text-based PDF files for filling in the user profile.
 - Added light Markdown formatting and an editable review step before imported profile text is saved.
 - Added clear guidance for formats that preserve structure best and for unsupported scanned PDFs.
 
