@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+- Generalized file import so supported documents can contain any profile-relevant content, rather than requiring resume content.
+- Replaced resume-specific formatting assumptions with generic heading and list detection.
+- Added a warning that imported profile text may be sent to the selected AI provider when filling forms.
+
 ## 0.3.0
 
 - Added local import from DOCX, Markdown, plain text, and text-based PDF files for filling in the user profile.

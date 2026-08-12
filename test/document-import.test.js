@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { deflateRawSync } from "node:zlib";
-import { docxXmlToText, importResumeFile, lightFormatResumeText, pdfItemsToText } from "../src/resume-import.js";
+import { docxXmlToText, importDocumentFile, lightFormatDocumentText, pdfItemsToText } from "../src/document-import.js";
 
-test("light formatting recognizes resume sections and bullets", () => {
+test("light formatting recognizes generic headings and bullets", () => {
   assert.equal(
-    lightFormatResumeText("Jane Doe\nEXPERIENCE\n• Built accessible tools\nEducation:\nState University"),
-    "Jane Doe\n## Experience\n- Built accessible tools\n## Education\nState University"
+    lightFormatDocumentText("Project Notes\nDECISIONS\n• Use accessible controls\nNext steps:\nShip it"),
+    "Project Notes\n## Decisions\n- Use accessible controls\n## Next Steps\nShip it"
   );
 });
 
@@ -20,8 +20,8 @@ test("PDF items are ordered into readable lines", () => {
 });
 
 test("Markdown imports preserve existing Markdown", async () => {
-  const file = { name: "resume.md", size: 30, text: async () => "# Jane Doe\n\n- Developer\n" };
-  assert.equal(await importResumeFile(file), "# Jane Doe\n\n- Developer");
+  const file = { name: "notes.md", size: 30, text: async () => "# Project notes\n\n- Decision\n" };
+  assert.equal(await importDocumentFile(file), "# Project notes\n\n- Decision");
 });
 
 test("DOCX XML preserves headings, lists, and escaped text", () => {
@@ -34,21 +34,21 @@ test("DOCX XML preserves headings, lists, and escaped text", () => {
 
 test("DOCX imports read the document XML from a compressed ZIP", async () => {
   const xml = `<w:document><w:body>
-    <w:p><w:r><w:t>Jane Doe</w:t></w:r></w:p>
-    <w:p><w:r><w:t>EXPERIENCE</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Project Notes</w:t></w:r></w:p>
+    <w:p><w:r><w:t>DECISIONS</w:t></w:r></w:p>
   </w:body></w:document>`;
   const zip = makeZipEntry("word/document.xml", xml);
   const file = {
-    name: "resume.docx",
+    name: "notes.docx",
     size: zip.byteLength,
     arrayBuffer: async () => zip.buffer.slice(zip.byteOffset, zip.byteOffset + zip.byteLength)
   };
-  assert.equal(await importResumeFile(file), "Jane Doe\n## Experience");
+  assert.equal(await importDocumentFile(file), "Project Notes\n## Decisions");
 });
 
 test("unsupported formats get a useful error", async () => {
-  const file = { name: "resume.rtf", size: 30 };
-  await assert.rejects(() => importResumeFile(file), /PDF, DOCX, Markdown, or plain-text/);
+  const file = { name: "notes.rtf", size: 30 };
+  await assert.rejects(() => importDocumentFile(file), /PDF, DOCX, Markdown, or plain-text/);
 });
 
 function makeZipEntry(name, contents) {

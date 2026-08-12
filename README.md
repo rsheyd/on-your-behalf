@@ -22,7 +22,7 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 ## Features
 
 - Uses one flexible, plain-text profile instead of a rigid collection of profile fields.
-- Imports editable profile text locally from DOCX, Markdown, plain text, and text-based PDF resumes.
+- Imports editable profile text locally from DOCX, Markdown, plain text, and text-based PDF documents.
 - Supports Google Gemini, OpenAI, and Anthropic with your own API key.
 - Fills text inputs, textareas, checkboxes, radio groups, native selects, and common ARIA comboboxes.
 - Reports profile facts that are missing and questions that require the user's judgment.
@@ -45,7 +45,7 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 8. Open a web form, click the extension, and select **Scan and fill this page**.
 9. Review every green-outlined answer before submitting the form yourself.
 
-In Settings, you can import a file (such as a resume, cover letter, etc) to fill in your profile, instead of entering the profile by hand. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable and is not saved until you choose **Save settings**.
+In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable, may be sent to your selected AI provider when filling forms, and is not saved until you choose **Save settings**.
 
 After filling, the popup lists factual answers missing from your profile and questions that require a decision. Use **Open profile settings** to add durable facts; judgment calls remain for the current form.
 
@@ -83,7 +83,7 @@ Potential improvements to profile editing, API-key setup, and first-run onboardi
 - `manifest.json` — Manifest V3 extension configuration and version.
 - `src/background.js` — AI request orchestration.
 - `src/content.js` — page scanning and filling.
-- `src/form-core.js`, `src/prompt.js`, `src/providers.js`, and `src/resume-import.js` — standalone form, prompt, parsing, provider, and resume-import logic.
+- `src/form-core.js`, `src/prompt.js`, `src/providers.js`, and `src/document-import.js` — standalone form, prompt, parsing, provider, and document-import logic.
 - `src/vendor/` — browser-ready PDF.js distribution with its license.
 - `src/popup.*` — compact scan-and-fill action.
 - `src/options.*` — profile and provider settings.
@@ -99,7 +99,7 @@ Potential improvements to profile editing, API-key setup, and first-run onboardi
 - File uploads and rich-text editors are skipped.
 - Provider keys are stored locally but are not protected like credentials in a password manager.
 - There is no Ollama support yet.
-- Scanned resume PDFs require OCR and cannot be imported; complex PDF columns may extract out of order.
+- Scanned PDFs require OCR and cannot be imported; complex PDF columns may extract out of order.
 
 ## License
 

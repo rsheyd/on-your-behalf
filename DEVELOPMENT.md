@@ -30,7 +30,7 @@ Test at least:
 - A payment-card and one-time-code field; each must remain empty.
 - A page with no form fields.
 - Missing profile and missing API key errors.
-- Resume import from DOCX, Markdown, plain text, and a text-based PDF.
+- File import from DOCX, Markdown, plain text, and a text-based PDF.
 - A scanned PDF produces an unsupported-format message instead of changing the profile.
 - Importing over a non-empty profile asks for confirmation and does not save automatically.
 - Each supported provider with a real API key.
@@ -45,4 +45,4 @@ Update `manifest.json`, update `CHANGELOG.md`, run automated tests, and complete
 
 ## Vendored import libraries
 
-PDF resume import uses a browser-ready copy of PDF.js under `src/vendor/`; its license is stored beside it. DOCX import uses the browser's built-in ZIP decompression. To update PDF.js, update the npm dependency, copy its browser distribution and license into `src/vendor/`, then rerun the automated and manual checks.
+PDF file import uses a browser-ready copy of PDF.js under `src/vendor/`; its license is stored beside it. DOCX import uses the browser's built-in ZIP decompression. To update PDF.js, update the npm dependency, copy its browser distribution and license into `src/vendor/`, then rerun the automated and manual checks.

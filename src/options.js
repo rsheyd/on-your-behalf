@@ -1,5 +1,5 @@
 import { defaultModel } from "./providers.js";
-import { importResumeFile } from "./resume-import.js";
+import { importDocumentFile } from "./document-import.js";
 
 const form = document.querySelector("#settings-form");
 const profile = document.querySelector("#profile");
@@ -7,7 +7,7 @@ const provider = document.querySelector("#provider");
 const model = document.querySelector("#model");
 const apiKey = document.querySelector("#api-key");
 const status = document.querySelector("#status");
-const resumeFile = document.querySelector("#resume-file");
+const documentFile = document.querySelector("#document-file");
 const importStatus = document.querySelector("#import-status");
 let apiKeys = {};
 let previousProvider = "gemini";
@@ -20,7 +20,7 @@ provider.addEventListener("change", () => {
   model.value = defaultModel(provider.value);
 });
 form.addEventListener("submit", save);
-resumeFile.addEventListener("change", importResume);
+documentFile.addEventListener("change", importDocument);
 
 async function initialize() {
   const saved = await chrome.storage.local.get(["profile", "provider", "model", "apiKeys"]);
@@ -32,27 +32,27 @@ async function initialize() {
   apiKey.value = apiKeys[provider.value] || "";
 }
 
-async function importResume() {
-  const file = resumeFile.files[0];
+async function importDocument() {
+  const file = documentFile.files[0];
   if (!file) return;
-  if (profile.value.trim() && !confirm("Replace the current profile with this resume? Your saved profile will remain unchanged until you click Save settings.")) {
-    resumeFile.value = "";
+  if (profile.value.trim() && !confirm("Replace the current profile with this document? Your saved profile will remain unchanged until you click Save settings.")) {
+    documentFile.value = "";
     return;
   }
 
-  resumeFile.disabled = true;
+  documentFile.disabled = true;
   importStatus.classList.remove("error");
   importStatus.textContent = `Reading ${file.name}…`;
   try {
-    profile.value = await importResumeFile(file);
+    profile.value = await importDocumentFile(file);
     profile.focus();
-    importStatus.textContent = "Resume imported. Review the profile, then click Save settings.";
+    importStatus.textContent = "Document imported. Review the profile, then click Save settings.";
   } catch (error) {
     importStatus.classList.add("error");
-    importStatus.textContent = error instanceof Error ? error.message : "The resume could not be imported.";
+    importStatus.textContent = error instanceof Error ? error.message : "The document could not be imported.";
   } finally {
-    resumeFile.disabled = false;
-    resumeFile.value = "";
+    documentFile.disabled = false;
+    documentFile.value = "";
   }
 }
 

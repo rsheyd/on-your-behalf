@@ -1,35 +1,28 @@
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
 const MAX_PROFILE_CHARS = 200_000;
 const MAX_DOCX_XML_BYTES = 5 * 1024 * 1024;
-const SECTION_NAMES = new Set([
-  "summary", "profile", "objective", "experience", "work experience",
-  "professional experience", "employment", "education", "skills",
-  "technical skills", "certifications", "licenses", "projects", "awards",
-  "publications", "volunteer experience", "volunteering", "languages"
-]);
-
-export async function importResumeFile(file, dependencies = {}) {
-  if (!file) throw new Error("Choose a resume file first.");
-  if (file.size > MAX_FILE_BYTES) throw new Error("Choose a resume smaller than 10 MB.");
+export async function importDocumentFile(file, dependencies = {}) {
+  if (!file) throw new Error("Choose a document first.");
+  if (file.size > MAX_FILE_BYTES) throw new Error("Choose a document smaller than 10 MB.");
 
   const extension = file.name.toLowerCase().split(".").pop();
   let markdown;
   if (extension === "md" || extension === "markdown") markdown = cleanMarkdown(await file.text());
-  else if (extension === "txt") markdown = lightFormatResumeText(await file.text());
+  else if (extension === "txt") markdown = lightFormatDocumentText(await file.text());
   else if (extension === "docx") markdown = await importDocx(file);
   else if (extension === "pdf") markdown = await importPdf(file, dependencies.loadPdfJs);
   else throw new Error("Use a PDF, DOCX, Markdown, or plain-text file.");
 
-  if (!markdown) throw new Error("No readable text was found in this resume.");
+  if (!markdown) throw new Error("No readable text was found in this document.");
   if (markdown.length > MAX_PROFILE_CHARS) {
-    throw new Error("This resume contains too much text. Shorten it to under 200,000 characters.");
+    throw new Error("This document contains too much text. Shorten it to under 200,000 characters.");
   }
   return markdown;
 }
 
 async function importDocx(file) {
   const documentXml = await readZipEntry(await file.arrayBuffer(), "word/document.xml");
-  const markdown = lightFormatResumeText(docxXmlToText(new TextDecoder().decode(documentXml)));
+  const markdown = lightFormatDocumentText(docxXmlToText(new TextDecoder().decode(documentXml)));
   if (!markdown) throw new Error("No readable text was found in this DOCX file.");
   return markdown;
 }
@@ -131,7 +124,7 @@ async function importPdf(file, suppliedLoader) {
   if (text.replace(/\s/g, "").length < 20) {
     throw new Error("No readable text was found. Scanned PDFs are not currently supported.");
   }
-  return lightFormatResumeText(text);
+  return lightFormatDocumentText(text);
 }
 
 async function loadPdfJs() {
@@ -176,7 +169,7 @@ export function pdfItemsToText(items) {
   return output.join("\n");
 }
 
-export function lightFormatResumeText(text) {
+export function lightFormatDocumentText(text) {
   const lines = normalizeLines(text);
   const formatted = [];
 
@@ -186,10 +179,9 @@ export function lightFormatResumeText(text) {
       return;
     }
 
-    const normalized = line.replace(/:$/, "").trim().toLowerCase();
-    const isKnownSection = SECTION_NAMES.has(normalized);
     const isShortAllCaps = line.length <= 45 && /[A-Z]/.test(line) && line === line.toUpperCase();
-    if (isKnownSection || (index > 0 && isShortAllCaps)) {
+    const isColonHeading = line.length <= 60 && line.endsWith(":") && !/[.!?]\s/.test(line);
+    if (index > 0 && (isShortAllCaps || isColonHeading)) {
       formatted.push(`## ${titleCase(line.replace(/:$/, ""))}`);
       return;
     }
