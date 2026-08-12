@@ -33,7 +33,11 @@ Test at least:
 - File import from DOCX, Markdown, plain text, and a text-based PDF.
 - A scanned PDF produces an unsupported-format message instead of changing the profile.
 - Importing over a non-empty profile asks for confirmation and does not save automatically.
-- Each supported provider with a real API key.
+- Switching providers preserves the current provider's entered or saved key and model choice.
+- Saved keys are masked; newly entered keys can be shown, hidden, and cleared.
+- Each supported provider connects successfully with a real API key.
+- Connection testing reports invalid-key, quota or billing, unavailable-model, rate-limit, and network failures clearly.
+- Clearing a saved key does not become permanent until settings are saved.
 - Editing a filled value before manually submitting.
 - Confirmation that submit, next, and continue buttons are never clicked.
 

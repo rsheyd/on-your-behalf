@@ -34,6 +34,7 @@ textarea { resize: vertical; }
 .key-link { display: inline-block; margin: 10px 0 9px; color: #167755; font-weight: 700; }
 .account-note { margin-bottom: 16px; }
 .key-entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 7px; }
+.key-storage-note { margin: 6px 0 10px; }
 .compact-button, .secondary-action { border: 1px solid #b9bcb4; background: #fff; color: #35372f; }
 .compact-button { padding: 8px 11px; }
 .danger-button { color: #8b2922; }

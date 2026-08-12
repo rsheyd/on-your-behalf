@@ -8,15 +8,15 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 
 **Table of contents**
 
-  - [Features](#features)
-  - [Screenshots](#screenshots)
-  - [Install locally in Chrome](#install-locally-in-chrome)
-  - [Privacy and security model](#privacy-and-security-model)
-  - [Test](#test)
-  - [Product ideas](#product-ideas)
-  - [Project structure](#project-structure)
-  - [Current limitations](#current-limitations)
-  - [License](#license)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Install locally in Chrome](#install-locally-in-chrome)
+- [Privacy and security model](#privacy-and-security-model)
+- [Test](#test)
+- [Product ideas](#product-ideas)
+- [Project structure](#project-structure)
+- [Current limitations](#current-limitations)
+- [License](#license)
 
 ## Features
 
@@ -35,11 +35,17 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 
 ## Screenshots
 
-<img width="394" height="234" alt="image" src="https://github.com/user-attachments/assets/aacc643d-bf08-4fc4-9b89-f19f6b5ebfc8" />
+The popup starts a fill and reminds the user that OYB never submits the form.
 
-<img width="788" height="600" alt="image" src="https://github.com/user-attachments/assets/c3e7207a-0062-4495-8511-c38d58d6da5c" />
+<img width="394" height="234" alt="On Your Behalf popup with the Scan and fill this page button" src="docs/images/popup.png" />
 
-<img width="783" height="582" alt="image" src="https://github.com/user-attachments/assets/d1ce5f37-de3d-4880-a848-488007cfb869" />
+Profile settings support a short starter outline, document import, freeform editing, and an optional extended field guide.
+
+<img width="788" height="600" alt="Profile settings showing starter template, file import, extended field guide, and editable profile text" src="docs/images/profile-settings.png" />
+
+Provider settings guide users through getting, testing, and safely storing their own API key.
+
+<img width="783" height="582" alt="AI provider settings showing Gemini, OpenAI, and Anthropic choices and the Gemini API connection flow" src="docs/images/provider-settings.png" />
 
 ## Install locally in Chrome
 
@@ -71,6 +77,8 @@ The extension sends the selected provider:
 
 It does not intentionally send current field values. Page text is treated as untrusted input in the AI prompt, and returned suggestions are restricted to field identifiers created during the current scan. These controls reduce prompt-injection risk but cannot eliminate it. Review suggestions before submitting sensitive or consequential forms.
 
+Choosing **Test connection** sends the selected provider a small request asking it to reply with `OK`. The test does not include your profile or information from a web form, but it may use a small amount of API quota.
+
 ## Test
 
 Requires Node.js 18 or newer. The runtime PDF library is vendored so the unpacked extension does not need a build step; `npm install` is needed only when updating that library.
@@ -84,7 +92,7 @@ See `DEVELOPMENT.md` for the manual Chrome test loop.
 
 ## Product ideas
 
-Potential improvements to profile editing, API-key setup, and first-run onboarding are collected in [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md).
+Completed onboarding direction and the remaining profile, portability, and first-run ideas are tracked in [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md).
 
 ## Project structure
 
@@ -95,6 +103,7 @@ Potential improvements to profile editing, API-key setup, and first-run onboardi
 - `src/vendor/` — browser-ready PDF.js distribution with its license.
 - `src/popup.*` — compact scan-and-fill action.
 - `src/options.*` — profile and provider settings.
+- `docs/images/` — screenshots used in this README.
 - `test/*.test.js` — unit tests for standalone logic.
 - `test/manual-form.html` — a manual compatibility fixture.
 - `PROFILE-TEMPLATE.md` — short Google Docs-friendly starter profile.
