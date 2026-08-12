@@ -6,10 +6,8 @@ An open-source, local-first Chrome extension that fills web forms from a persona
 
 Open a form, click the extension, and choose **Scan and fill this page**. The extension finds non-sensitive fields, asks the selected AI provider for profile-grounded suggestions, and places those suggestions directly into the page. Filled fields receive a green outline so you can review and edit every answer before submitting the form yourself.
 
-## Table of contents
+**Table of contents**
 
-- [On Your Behalf](#on-your-behalf)
-  - [Table of contents](#table-of-contents)
   - [Features](#features)
   - [Install locally in Chrome](#install-locally-in-chrome)
   - [Privacy and security model](#privacy-and-security-model)
@@ -33,6 +31,12 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 - Stores the profile, provider choice, model, and provider-specific API keys in Chrome extension-local storage.
 - Has no backend, account, analytics, or telemetry.
 - Uses `activeTab`: it can inspect a page only after you click the extension's fill action.
+
+<img width="788" height="600" alt="image" src="https://github.com/user-attachments/assets/c3e7207a-0062-4495-8511-c38d58d6da5c" />
+
+<img width="783" height="582" alt="image" src="https://github.com/user-attachments/assets/d1ce5f37-de3d-4880-a848-488007cfb869" />
+
+
 
 ## Install locally in Chrome
 
