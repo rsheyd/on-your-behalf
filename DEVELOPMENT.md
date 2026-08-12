@@ -30,6 +30,9 @@ Test at least:
 - A payment-card and one-time-code field; each must remain empty.
 - A page with no form fields.
 - Missing profile and missing API key errors.
+- Resume import from DOCX, Markdown, plain text, and a text-based PDF.
+- A scanned PDF produces an unsupported-format message instead of changing the profile.
+- Importing over a non-empty profile asks for confirmation and does not save automatically.
 - Each supported provider with a real API key.
 - Editing a filled value before manually submitting.
 - Confirmation that submit, next, and continue buttons are never clicked.
@@ -39,3 +42,7 @@ Test at least:
 The extension has a single version source: the `version` field in `manifest.json`. The private `package.json` intentionally has no version because this project is not published to npm.
 
 Update `manifest.json`, update `CHANGELOG.md`, run automated tests, and complete the relevant manual smoke checks before creating a release.
+
+## Vendored import libraries
+
+PDF resume import uses a browser-ready copy of PDF.js under `src/vendor/`; its license is stored beside it. DOCX import uses the browser's built-in ZIP decompression. To update PDF.js, update the npm dependency, copy its browser distribution and license into `src/vendor/`, then rerun the automated and manual checks.

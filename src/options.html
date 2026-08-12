@@ -17,6 +17,12 @@
         <section>
           <label for="profile">Your profile</label>
           <p class="help">Write naturally. Include only facts you want the extension to use on forms.</p>
+          <div class="resume-import">
+            <label class="file-label" for="resume-file">Import a file to fill in your profile (resume, cover letter, etc)</label>
+            <input id="resume-file" type="file" accept=".pdf,.docx,.md,.markdown,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain">
+            <p class="help">Best results: DOCX, Markdown, or plain text. Text-based PDFs work, but columns and formatting may not be preserved. Scanned PDFs are not supported.</p>
+            <span id="import-status" class="import-status" role="status" aria-live="polite"></span>
+          </div>
           <textarea id="profile" rows="15" placeholder="My name is…&#10;I live in…&#10;My professional background is…"></textarea>
         </section>
         <section class="provider-grid">

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+- Added local resume import from DOCX, Markdown, plain text, and text-based PDF files.
+- Added light Markdown formatting and an editable review step before imported profile text is saved.
+- Added clear guidance for formats that preserve structure best and for unsupported scanned PDFs.
+
 ## 0.2.1
 
 - Named the extension On Your Behalf (OYB) for its first public repository release.

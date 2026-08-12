@@ -6,9 +6,23 @@ An open-source, local-first Chrome extension that fills web forms from a persona
 
 Open a form, click the extension, and choose **Scan and fill this page**. The extension finds non-sensitive fields, asks the selected AI provider for profile-grounded suggestions, and places those suggestions directly into the page. Filled fields receive a green outline so you can review and edit every answer before submitting the form yourself.
 
+## Table of contents
+
+- [On Your Behalf](#on-your-behalf)
+  - [Table of contents](#table-of-contents)
+  - [Features](#features)
+  - [Install locally in Chrome](#install-locally-in-chrome)
+  - [Privacy and security model](#privacy-and-security-model)
+  - [Test](#test)
+  - [Product ideas](#product-ideas)
+  - [Project structure](#project-structure)
+  - [Current limitations](#current-limitations)
+  - [License](#license)
+
 ## Features
 
 - Uses one flexible, plain-text profile instead of a rigid collection of profile fields.
+- Imports editable profile text locally from DOCX, Markdown, plain text, and text-based PDF resumes.
 - Supports Google Gemini, OpenAI, and Anthropic with your own API key.
 - Fills text inputs, textareas, checkboxes, radio groups, native selects, and common ARIA comboboxes.
 - Reports profile facts that are missing and questions that require the user's judgment.
@@ -31,6 +45,8 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 8. Open a web form, click the extension, and select **Scan and fill this page**.
 9. Review every green-outlined answer before submitting the form yourself.
 
+In Settings, you can import a file (such as a resume, cover letter, etc) to fill in your profile, instead of entering the profile by hand. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable and is not saved until you choose **Save settings**.
+
 After filling, the popup lists factual answers missing from your profile and questions that require a decision. Use **Open profile settings** to add durable facts; judgment calls remain for the current form.
 
 After changing source files, click the extension's reload button on `chrome://extensions` before testing again.
@@ -49,7 +65,7 @@ It does not intentionally send current field values. Page text is treated as unt
 
 ## Test
 
-Requires Node.js 18 or newer. There are no packages to install.
+Requires Node.js 18 or newer. The runtime PDF library is vendored so the unpacked extension does not need a build step; `npm install` is needed only when updating that library.
 
 ```bash
 npm test
@@ -58,20 +74,22 @@ npm run check
 
 See `DEVELOPMENT.md` for the manual Chrome test loop.
 
-## License
+## Product ideas
 
-On Your Behalf is available under the MIT License. See `LICENSE`.
+Potential improvements to profile editing, API-key setup, and first-run onboarding are collected in [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md).
 
 ## Project structure
 
 - `manifest.json` — Manifest V3 extension configuration and version.
 - `src/background.js` — AI request orchestration.
 - `src/content.js` — page scanning and filling.
-- `src/form-core.js`, `src/prompt.js`, and `src/providers.js` — standalone form, prompt, parsing, and provider logic.
+- `src/form-core.js`, `src/prompt.js`, `src/providers.js`, and `src/resume-import.js` — standalone form, prompt, parsing, provider, and resume-import logic.
+- `src/vendor/` — browser-ready PDF.js distribution with its license.
 - `src/popup.*` — compact scan-and-fill action.
 - `src/options.*` — profile and provider settings.
 - `test/*.test.js` — unit tests for standalone logic.
 - `test/manual-form.html` — a manual compatibility fixture.
+- `PRODUCT-IDEAS.md` — product and onboarding ideas under consideration.
 
 ## Current limitations
 
@@ -81,3 +99,8 @@ On Your Behalf is available under the MIT License. See `LICENSE`.
 - File uploads and rich-text editors are skipped.
 - Provider keys are stored locally but are not protected like credentials in a password manager.
 - There is no Ollama support yet.
+- Scanned resume PDFs require OCR and cannot be imported; complex PDF columns may extract out of order.
+
+## License
+
+On Your Behalf is available under the MIT License. See `LICENSE`.
