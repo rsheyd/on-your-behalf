@@ -9,6 +9,7 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 **Table of contents**
 
   - [Features](#features)
+  - [Screenshots](#screenshots)
   - [Install locally in Chrome](#install-locally-in-chrome)
   - [Privacy and security model](#privacy-and-security-model)
   - [Test](#test)
@@ -32,11 +33,13 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 - Has no backend, account, analytics, or telemetry.
 - Uses `activeTab`: it can inspect a page only after you click the extension's fill action.
 
+## Screenshots
+
+<img width="394" height="234" alt="image" src="https://github.com/user-attachments/assets/aacc643d-bf08-4fc4-9b89-f19f6b5ebfc8" />
+
 <img width="788" height="600" alt="image" src="https://github.com/user-attachments/assets/c3e7207a-0062-4495-8511-c38d58d6da5c" />
 
 <img width="783" height="582" alt="image" src="https://github.com/user-attachments/assets/d1ce5f37-de3d-4880-a848-488007cfb869" />
-
-
 
 ## Install locally in Chrome
 
