@@ -16,34 +16,73 @@
       <form id="settings-form">
         <section>
           <label for="profile">Your profile</label>
-          <p class="help">Write naturally. Include only facts you want the extension to use on forms.</p>
-          <div class="document-import">
-            <label class="file-label" for="document-file">Import a document to fill in your profile</label>
-            <input id="document-file" type="file" accept=".pdf,.docx,.md,.markdown,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain">
-            <p class="help">Best results: DOCX, Markdown, or plain text. Text-based PDFs work, but columns and formatting may not be preserved. Scanned PDFs are not supported.</p>
-            <p class="help import-warning">Imported text becomes part of your profile and may be sent to your selected AI provider when filling forms. Review it before saving.</p>
-            <span id="import-status" class="import-status" role="status" aria-live="polite"></span>
+          <p class="help">Add facts you want OYB to use when filling forms. Use any structure you like.</p>
+          <div class="profile-tools" aria-label="Ways to create your profile">
+            <button id="start-template" class="profile-tool" type="button">
+              <span>Start with a template</span>
+              <small>Insert a short profile outline</small>
+            </button>
+            <label class="profile-tool file-button" for="document-file">
+              <span>Import from a file</span>
+              <small>DOCX, Markdown, text, or text-based PDF</small>
+              <input id="document-file" class="visually-hidden" type="file" accept=".pdf,.docx,.md,.markdown,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain">
+            </label>
+            <a class="profile-tool" href="https://github.com/rsheyd/on-your-behalf/blob/main/PROFILE-FIELD-GUIDE.md" target="_blank" rel="noreferrer">
+              <span>View extended field guide</span>
+              <small>Browse more optional profile fields</small>
+            </a>
           </div>
+          <span id="import-status" class="import-status" role="status" aria-live="polite"></span>
           <textarea id="profile" rows="15" placeholder="My name is…&#10;I live in…&#10;My professional background is…"></textarea>
         </section>
-        <section class="provider-grid">
-          <div>
-            <label for="provider">AI provider</label>
-            <select id="provider">
-              <option value="gemini">Google Gemini</option>
-              <option value="openai">OpenAI</option>
-              <option value="anthropic">Anthropic</option>
-            </select>
-          </div>
-          <div>
-            <label for="model">Model</label>
-            <input id="model" type="text" spellcheck="false">
-          </div>
-        </section>
         <section>
-          <label for="api-key">API key</label>
-          <input id="api-key" type="password" autocomplete="off" spellcheck="false">
-          <p class="help">The key is sent only to the selected provider when you choose to fill a page.</p>
+          <label>AI provider</label>
+          <p class="help">Choose which provider OYB should contact when filling forms.</p>
+          <div class="provider-choices">
+            <label class="provider-choice">
+              <input type="radio" name="provider" value="gemini">
+              <span>Google Gemini <strong>Recommended</strong></span>
+              <small>Usually the quickest setup; free API usage may be available.</small>
+            </label>
+            <label class="provider-choice">
+              <input type="radio" name="provider" value="openai">
+              <span>OpenAI</span>
+              <small>Uses a separate OpenAI developer account and API billing.</small>
+            </label>
+            <label class="provider-choice">
+              <input type="radio" name="provider" value="anthropic">
+              <span>Anthropic</span>
+              <small>Uses an Anthropic Console account and API billing.</small>
+            </label>
+          </div>
+
+          <div class="provider-setup">
+            <h2 id="provider-name"></h2>
+            <p id="provider-instructions"></p>
+            <a id="create-key" class="key-link" target="_blank" rel="noreferrer">Create an API key ↗</a>
+            <p id="provider-note" class="help account-note"></p>
+
+            <label for="api-key">API key</label>
+            <div class="key-entry">
+              <input id="api-key" type="password" autocomplete="off" spellcheck="false">
+              <button id="toggle-key" class="compact-button" type="button">Show</button>
+              <button id="clear-key" class="compact-button danger-button" type="button">Clear</button>
+            </div>
+            <p class="help">The key stays in Chrome extension-local storage and is sent only to the selected provider.</p>
+
+            <div class="connection-actions">
+              <button id="test-connection" class="secondary-action" type="button">Test connection</button>
+              <span id="connection-status" role="status" aria-live="polite"></span>
+            </div>
+            <p class="help test-note">Testing sends a very small request and may use a small amount of API quota.</p>
+
+            <details>
+              <summary>Advanced settings</summary>
+              <label for="model">Model</label>
+              <input id="model" type="text" spellcheck="false">
+              <button id="reset-model" class="text-button" type="button">Restore default model</button>
+            </details>
+          </div>
         </section>
         <div class="actions">
           <button type="submit">Save settings</button>

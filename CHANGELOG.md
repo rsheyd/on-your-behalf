@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.3
+
+- Added clearly labeled starter-template, file-import, and extended field-guide paths directly to profile settings, with contextual format and privacy guidance.
+- Added guided provider selection, official API-key setup links, saved-key masking, connection testing, and plain-language error guidance.
+- Moved manual model selection into Advanced settings.
+
+## 0.3.2
+
+- Added a short Google Docs-friendly starter profile plus an optional extended field guide with privacy guidance, safe migration tips, and OYB import instructions.
+
 ## 0.3.1
 
 - Generalized file import so supported documents can contain any profile-relevant content, rather than requiring resume content.

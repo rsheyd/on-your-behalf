@@ -24,6 +24,7 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 - Uses one flexible, plain-text profile instead of a rigid collection of profile fields.
 - Imports editable profile text locally from DOCX, Markdown, plain text, and text-based PDF documents.
 - Supports Google Gemini, OpenAI, and Anthropic with your own API key.
+- Provides provider-specific key setup links, connection testing, and plain-language setup errors.
 - Fills text inputs, textareas, checkboxes, radio groups, native selects, and common ARIA comboboxes.
 - Reports profile facts that are missing and questions that require the user's judgment.
 - Handles React-style controlled text fields using native value setters and browser events.
@@ -41,11 +42,11 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 4. Select this project directory—the directory containing `manifest.json`.
 5. Pin **On Your Behalf** from Chrome's Extensions menu.
 6. Open the extension and select **Settings**.
-7. Add a text profile, select a provider and model, and paste your API key.
+7. Add a text profile, choose a provider, follow its API-key setup link, and test the connection.
 8. Open a web form, click the extension, and select **Scan and fill this page**.
 9. Review every green-outlined answer before submitting the form yourself.
 
-In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable, may be sent to your selected AI provider when filling forms, and is not saved until you choose **Save settings**.
+In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. [`PROFILE-TEMPLATE.md`](PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable, may be sent to your selected AI provider when filling forms, and is not saved until you choose **Save settings**.
 
 After filling, the popup lists factual answers missing from your profile and questions that require a decision. Use **Open profile settings** to add durable facts; judgment calls remain for the current form.
 
@@ -89,6 +90,8 @@ Potential improvements to profile editing, API-key setup, and first-run onboardi
 - `src/options.*` — profile and provider settings.
 - `test/*.test.js` — unit tests for standalone logic.
 - `test/manual-form.html` — a manual compatibility fixture.
+- `PROFILE-TEMPLATE.md` — short Google Docs-friendly starter profile.
+- `PROFILE-FIELD-GUIDE.md` — optional extended list of profile fields and migration guidance.
 - `PRODUCT-IDEAS.md` — product and onboarding ideas under consideration.
 
 ## Current limitations
