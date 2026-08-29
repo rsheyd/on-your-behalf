@@ -2,6 +2,8 @@
 
 The project has no build step. Load the repository directory directly as an unpacked Chrome extension.
 
+For contribution expectations and the safety invariants that every change must preserve, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Development loop
 
 1. Edit files in `src/` or `manifest.json`.

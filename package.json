@@ -1,6 +1,19 @@
 {
   "name": "on-your-behalf",
+  "description": "A local-first Chrome extension that fills web forms from a personal text profile using a user-selected AI provider.",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rsheyd/on-your-behalf.git"
+  },
+  "homepage": "https://github.com/rsheyd/on-your-behalf#readme",
+  "bugs": {
+    "url": "https://github.com/rsheyd/on-your-behalf/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "scripts": {
     "test": "node --test",

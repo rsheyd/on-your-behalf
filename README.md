@@ -13,8 +13,9 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 - [Install locally in Chrome](#install-locally-in-chrome)
 - [Privacy and security model](#privacy-and-security-model)
 - [Test](#test)
-- [Product ideas](#product-ideas)
+- [Product roadmap](#product-roadmap)
 - [Project structure](#project-structure)
+- [Contributing and security](#contributing-and-security)
 - [Current limitations](#current-limitations)
 - [License](#license)
 
@@ -88,11 +89,11 @@ npm test
 npm run check
 ```
 
-See `DEVELOPMENT.md` for the manual Chrome test loop.
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the manual Chrome test loop.
 
-## Product ideas
+## Product roadmap
 
-Completed onboarding direction and the remaining profile, portability, and first-run ideas are tracked in [`PRODUCT-IDEAS.md`](PRODUCT-IDEAS.md).
+Completed onboarding direction and the remaining profile, portability, and first-run ideas are tracked in the [`product roadmap`](docs/roadmap/product-ideas.md). Concrete feature designs live separately under `docs/design/`.
 
 ## Project structure
 
@@ -104,11 +105,18 @@ Completed onboarding direction and the remaining profile, portability, and first
 - `src/popup.*` — compact scan-and-fill action.
 - `src/options.*` — profile and provider settings.
 - `docs/images/` — screenshots used in this README.
+- `docs/design/` — implementation-ready feature designs.
+- `docs/roadmap/` — longer-term product direction and ideas.
 - `test/*.test.js` — unit tests for standalone logic.
 - `test/manual-form.html` — a manual compatibility fixture.
 - `PROFILE-TEMPLATE.md` — short Google Docs-friendly starter profile.
 - `PROFILE-FIELD-GUIDE.md` — optional extended list of profile fields and migration guidance.
-- `PRODUCT-IDEAS.md` — product and onboarding ideas under consideration.
+
+## Contributing and security
+
+Contributions are welcome. Read [`CONTRIBUTING.md`](CONTRIBUTING.md) for the project invariants, development workflow, testing expectations, and pull-request guidance.
+
+Please do not disclose suspected vulnerabilities in a public issue. Follow [`SECURITY.md`](SECURITY.md) to start a private report or request a private contact channel without including sensitive details.
 
 ## Current limitations
 
