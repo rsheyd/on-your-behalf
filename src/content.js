@@ -5,6 +5,8 @@
   const FIELD_ATTRIBUTE = "data-open-form-filler-id";
   const HIGHLIGHT_CLASS = "open-form-filler-filled";
   const STYLE_ID = "open-form-filler-style";
+  const formState = globalThis.OpenFormFillerState;
+  const logicalFieldIds = new Map();
   let counter = 0;
 
   function text(value, maxLength = 500) {
@@ -48,17 +50,56 @@
     );
   }
 
-  function ensureId(element) {
-    if (!element.hasAttribute(FIELD_ATTRIBUTE)) {
-      counter += 1;
-      element.setAttribute(FIELD_ATTRIBUTE, `off-${Date.now().toString(36)}-${counter}`);
+  function ensureId(element, logicalKey) {
+    const fieldId = formState.stableFieldId({
+      logicalKey,
+      currentId: element.getAttribute(FIELD_ATTRIBUTE) || "",
+      identityMap: logicalFieldIds,
+      createId() {
+        counter += 1;
+        return `off-${Date.now().toString(36)}-${counter}`;
+      }
+    });
+    if (element.getAttribute(FIELD_ATTRIBUTE) !== fieldId) element.setAttribute(FIELD_ATTRIBUTE, fieldId);
+    return fieldId;
+  }
+
+  function backingSelect(element) {
+    if (element instanceof HTMLSelectElement) return element;
+    return element.querySelector("select")
+      || document.getElementById(`${element.id}_input`)
+      || document.getElementById(`${element.id}-input`);
+  }
+
+  function placeholderOption(option) {
+    const value = String(option?.value ?? "").trim().toLowerCase();
+    const label = text(option?.textContent, 150).toLowerCase();
+    return value === "" || /^(?:--\s*)?(?:select|choose)\b/.test(label) || ((value === "0" || value === "-1") && /select|choose/.test(label));
+  }
+
+  function selectIsEmpty(element) {
+    if (!element || element.selectedIndex < 0) return true;
+    return placeholderOption(element.options[element.selectedIndex]);
+  }
+
+  function elementIsEmpty(element, groupElements = [element]) {
+    const type = (element.type || "").toLowerCase();
+    if (type === "radio") return !groupElements.some(item => item.checked);
+    if (type === "checkbox") return !element.checked;
+    if (element instanceof HTMLSelectElement) return selectIsEmpty(element);
+    if (element.getAttribute("role") === "combobox") {
+      const select = backingSelect(element);
+      if (select) return selectIsEmpty(select);
+      const displayed = element.getAttribute("aria-valuetext") || element.querySelector(".ui-selectonemenu-label")?.textContent || element.textContent;
+      return /^(?:--\s*)?(?:select|choose)\b/i.test(text(displayed, 150));
     }
-    return element.getAttribute(FIELD_ATTRIBUTE);
+    return !String(element.value || "").trim();
   }
 
   function optionList(element) {
-    if (element instanceof HTMLSelectElement) {
-      return [...element.options].filter(option => !option.disabled).map(option => ({ value: option.value, label: text(option.textContent, 150) }));
+    const select = backingSelect(element);
+    if (select) {
+      return [...select.options].filter(option => !option.disabled).map(option => ({ value: option.value, label: text(option.textContent, 150) }));
     }
     const controls = element.getAttribute("aria-controls");
     const owned = element.getAttribute("aria-owns");
@@ -71,10 +112,9 @@
   }
 
   function scan() {
-    document.querySelectorAll(`[${FIELD_ATTRIBUTE}]`).forEach(element => element.removeAttribute(FIELD_ATTRIBUTE));
-    counter = 0;
     const candidates = [...document.querySelectorAll('input, textarea, select, [role="combobox"]')];
     const seenRadioGroups = new Set();
+    const identityOccurrences = new Map();
     const fields = [];
 
     for (const element of candidates) {
@@ -90,14 +130,17 @@
         if (seenRadioGroups.has(groupName)) continue;
         seenRadioGroups.add(groupName);
         const radios = [...document.querySelectorAll('input[type="radio"]')].filter(radio => (radio.name || nearbyLabel(radio)) === groupName && isVisible(radio) && !radio.disabled);
-        const fieldId = ensureId(element);
+        const logicalKey = formState.logicalFieldKey({ domId: "", name: element.name || groupName, kind: "radio", label });
+        const fieldId = ensureId(element, logicalKey);
         radios.forEach(radio => radio.setAttribute(FIELD_ATTRIBUTE, fieldId));
         fields.push({
           fieldId,
+          logicalKey,
           kind: "radio",
           label,
           name: element.name || "",
           required: radios.some(radio => radio.required),
+          empty: elementIsEmpty(element, radios),
           options: radios.map(radio => ({ value: radio.value, label: nearbyLabel(radio) || radio.value }))
         });
         continue;
@@ -108,8 +151,14 @@
         : element.getAttribute("role") === "combobox" ? "custom-select"
         : element instanceof HTMLTextAreaElement ? "textarea"
         : "input";
+      const identity = { domId: element.id || "", name: element.name || "", kind, label };
+      const identityBase = formState.logicalFieldKey(identity);
+      const occurrence = identityOccurrences.get(identityBase) || 0;
+      identityOccurrences.set(identityBase, occurrence + 1);
+      const logicalKey = formState.logicalFieldKey(identity, occurrence);
       fields.push({
-        fieldId: ensureId(element),
+        fieldId: ensureId(element, logicalKey),
+        logicalKey,
         kind,
         inputType: type || "text",
         label,
@@ -123,6 +172,7 @@
         min: element.getAttribute("min") || "",
         max: element.getAttribute("max") || "",
         required: Boolean(element.required || element.getAttribute("aria-required") === "true"),
+        empty: elementIsEmpty(element),
         options: optionList(element)
       });
     }
@@ -180,14 +230,60 @@
     return true;
   }
 
-  async function fill(suggestions) {
+  function choiceControl(element) {
+    const type = (element.type || "").toLowerCase();
+    return type === "radio" || type === "checkbox" || element instanceof HTMLSelectElement || element.getAttribute("role") === "combobox";
+  }
+
+  function waitForPageSettled(quietMs = 180, maxMs = 1600) {
+    return new Promise(resolve => {
+      let quietTimer = null;
+      let finished = false;
+      let maxTimer = null;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        clearTimeout(quietTimer);
+        clearTimeout(maxTimer);
+        observer.disconnect();
+        resolve();
+      };
+      const scheduleQuiet = () => {
+        clearTimeout(quietTimer);
+        quietTimer = setTimeout(finish, quietMs);
+      };
+      const observer = new MutationObserver(scheduleQuiet);
+      observer.observe(document.documentElement, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ["aria-hidden", "class", "disabled", "hidden", "style"]
+      });
+      maxTimer = setTimeout(finish, maxMs);
+      scheduleQuiet();
+    });
+  }
+
+  async function fill(suggestions, expectedFields = []) {
     let filled = 0;
+    let mutated = false;
+    const filledIds = [];
     const failed = [];
-    for (const suggestion of suggestions) {
+    const skipped = [];
+    let latestScan = scan();
+    const validSuggestions = expectedFields.length
+      ? formState.validSuggestionsForScan(suggestions, expectedFields, latestScan.fields)
+      : suggestions;
+    for (const suggestion of validSuggestions) {
       const elements = [...document.querySelectorAll(`[${FIELD_ATTRIBUTE}="${CSS.escape(suggestion.fieldId)}"]`)];
       const element = elements[0];
       if (!element || sensitive(element, nearbyLabel(element))) continue;
+      if (!elementIsEmpty(element, elements)) {
+        skipped.push(suggestion.fieldId);
+        continue;
+      }
       try {
+        const beforeFields = latestScan.fields;
         const type = (element.type || "").toLowerCase();
         if (type === "radio") {
           const target = String(suggestion.value).toLowerCase();
@@ -215,12 +311,21 @@
           highlight(element);
         }
         filled += 1;
+        filledIds.push(suggestion.fieldId);
+        if (choiceControl(element)) {
+          await waitForPageSettled();
+          latestScan = scan();
+          const comparison = formState.compareFieldScans(beforeFields, latestScan.fields);
+          mutated = comparison.newFields.length > 0 || comparison.changedFields.length > 0 || comparison.disappearedFields.length > 0;
+          if (mutated) break;
+        }
       } catch (error) {
         failed.push(suggestion.fieldId);
         console.warn("Open Form Filler could not fill a field", suggestion.fieldId, error);
       }
     }
-    return { filled, failed };
+    if (!mutated) latestScan = scan();
+    return { filled, filledIds, failed, skipped, mutated, scan: latestScan };
   }
 
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
@@ -229,7 +334,7 @@
       return false;
     }
     if (message?.type === "FILL_FORM") {
-      fill(message.suggestions || []).then(result => sendResponse({ ok: true, ...result }));
+      fill(message.suggestions || [], message.expectedFields || []).then(result => sendResponse({ ok: true, ...result }));
       return true;
     }
     return false;

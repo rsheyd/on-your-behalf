@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OYB conditional form fixture</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; }
+    body { max-width: 760px; margin: 40px auto; padding: 0 20px 60px; color: #172033; }
+    h1 { margin-bottom: 8px; }
+    .notice { padding: 12px 16px; border: 1px solid #86a7ce; border-radius: 8px; background: #eef6ff; }
+    form { margin-top: 28px; }
+    .field { margin: 16px 0; }
+    .field > label { display: block; margin-bottom: 6px; font-weight: 650; }
+    .required::after { content: " •"; color: #a76d00; }
+    input, textarea, .custom-select { box-sizing: border-box; width: min(100%, 440px); padding: 9px 11px; border: 1px solid #66738a; border-radius: 5px; background: white; color: inherit; font: inherit; }
+    textarea { min-height: 110px; resize: vertical; }
+    .custom-select { position: relative; cursor: pointer; }
+    .custom-select::after { content: "▾"; float: right; }
+    .custom-select[aria-expanded="true"] { outline: 2px solid #3977b8; outline-offset: 1px; }
+    .select-panel { width: min(100%, 440px); margin-top: 4px; border: 1px solid #66738a; border-radius: 5px; background: white; box-shadow: 0 6px 20px rgb(23 32 51 / 16%); }
+    .select-panel[hidden] { display: none; }
+    [role="option"] { padding: 8px 11px; cursor: pointer; }
+    [role="option"]:hover, [role="option"]:focus { background: #e7f1fb; outline: none; }
+    .actions { display: flex; gap: 10px; margin-top: 28px; }
+    button { padding: 9px 14px; font: inherit; }
+    .fixture-state { margin-top: 30px; padding: 14px; border-radius: 6px; background: #f3f4f6; font-family: ui-monospace, monospace; white-space: pre-wrap; }
+    [data-updating="true"] { opacity: .65; }
+  </style>
+</head>
+<body>
+  <h1>Conditional work activity fixture</h1>
+  <p class="notice">This repository-owned test page contains no account or session data. It imitates a form that replaces dependent controls after a custom dropdown selection. Nothing is sent over the network.</p>
+  <form id="activity-form">
+    <div class="field">
+      <label class="required" for="activity-date">Date</label>
+      <input id="activity-date" name="activity_date" type="text" placeholder="mm/dd/yyyy" required>
+    </div>
+    <div id="dynamic-fields" aria-live="polite"></div>
+    <div class="actions">
+      <button id="save" type="submit">Save</button>
+      <button id="next" type="button">Next</button>
+    </div>
+  </form>
+  <output id="fixture-state" class="fixture-state" aria-live="polite"></output>
+  <script>
+    const ACTIVITY_TYPES = [
+      { value: "", label: "-- Select One --" },
+      { value: "employer", label: "Employer Contact" },
+      { value: "preparation", label: "Work Search Preparation Activity" }
+    ];
+
+    const EMPLOYER_DESCRIPTIONS = [
+      { value: "", label: "-- Select One --" },
+      { value: "inquiry", label: "Inquiry" },
+      { value: "application", label: "Submitted job application" },
+      { value: "interview", label: "Interviewed for position" },
+      { value: "other-employer", label: "Other employer contact" }
+    ];
+
+    const PREPARATION_DESCRIPTIONS = [
+      { value: "", label: "-- Select One --" },
+      { value: "research", label: "Company / industry research" },
+      { value: "workshop", label: "One Stop workshop / seminar" },
+      { value: "resume", label: "Resume development / resume revision" },
+      { value: "other-preparation", label: "Other preparation activity" }
+    ];
+
+    const CONTACT_METHODS = [
+      { value: "", label: "-- Select One --" },
+      { value: "website", label: "Company Website or Kiosk" },
+      { value: "email", label: "Email" },
+      { value: "in-person", label: "In Person" },
+      { value: "phone", label: "Phone" },
+      { value: "other", label: "Other" }
+    ];
+
+    const CONTACT_RESULTS = [
+      { value: "", label: "-- Select One --" },
+      { value: "confirmation", label: "Received confirmation of submitted application or resume" },
+      { value: "interviewed", label: "Interviewed" },
+      { value: "hired", label: "Hired" },
+      { value: "waiting", label: "Waiting for a response" },
+      { value: "other", label: "Other" }
+    ];
+
+    const state = {
+      activityType: "",
+      description: "",
+      rerenders: 0,
+      selectionChanges: 0,
+      submitAttempts: 0,
+      navigationAttempts: 0,
+      pendingUpdate: false,
+      lastUpdate: "Initial render"
+    };
+
+    let updateTimer = null;
+    const dynamicFields = document.querySelector("#dynamic-fields");
+    const fixtureState = document.querySelector("#fixture-state");
+
+    function field(labelText, control, { required = false } = {}) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "field";
+      const label = document.createElement("label");
+      label.htmlFor = control.dataset.labelFor || control.id;
+      label.textContent = labelText;
+      label.classList.toggle("required", required);
+      wrapper.append(label, control);
+      return wrapper;
+    }
+
+    function textInput(id, name) {
+      const input = document.createElement("input");
+      input.id = id;
+      input.name = name;
+      input.type = "text";
+      return input;
+    }
+
+    function textArea(id, name) {
+      const textarea = document.createElement("textarea");
+      textarea.id = id;
+      textarea.name = name;
+      return textarea;
+    }
+
+    function customSelect({ id, name, options, value, onChange }) {
+      const wrapper = document.createElement("div");
+      const control = document.createElement("div");
+      const panel = document.createElement("div");
+      const backingSelect = document.createElement("select");
+      const selected = options.find(option => option.value === value) || options[0];
+
+      wrapper.dataset.labelFor = id;
+      control.id = id;
+      control.className = "custom-select";
+      control.tabIndex = 0;
+      control.setAttribute("role", "combobox");
+      control.setAttribute("aria-expanded", "false");
+      control.setAttribute("aria-haspopup", "listbox");
+      control.setAttribute("aria-owns", `${id}-panel`);
+      control.textContent = selected.label;
+
+      panel.id = `${id}-panel`;
+      panel.className = "select-panel";
+      panel.hidden = true;
+
+      backingSelect.id = `${id}-input`;
+      backingSelect.name = name;
+      backingSelect.hidden = true;
+      backingSelect.setAttribute("aria-hidden", "true");
+      backingSelect.tabIndex = -1;
+      for (const option of options) backingSelect.add(new Option(option.label, option.value, false, option.value === selected.value));
+
+      function close() {
+        panel.hidden = true;
+        panel.replaceChildren();
+        control.setAttribute("aria-expanded", "false");
+      }
+
+      function open() {
+        panel.replaceChildren();
+        panel.hidden = false;
+        control.setAttribute("aria-expanded", "true");
+        const listbox = document.createElement("div");
+        listbox.setAttribute("role", "listbox");
+        for (const option of options) {
+          const item = document.createElement("div");
+          item.tabIndex = 0;
+          item.setAttribute("role", "option");
+          item.setAttribute("data-value", option.value);
+          item.setAttribute("aria-selected", String(option.value === backingSelect.value));
+          item.textContent = option.label;
+          item.addEventListener("click", event => {
+            event.stopPropagation();
+            backingSelect.value = option.value;
+            control.textContent = option.label;
+            close();
+            state.selectionChanges += 1;
+            onChange(option.value);
+          });
+          listbox.append(item);
+        }
+        panel.append(listbox);
+      }
+
+      control.addEventListener("click", () => panel.hidden ? open() : close());
+      control.addEventListener("keydown", event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          panel.hidden ? open() : close();
+        }
+        if (event.key === "Escape") close();
+      });
+      wrapper.append(control, backingSelect, panel);
+      return wrapper;
+    }
+
+    function scheduleRerender(reason) {
+      clearTimeout(updateTimer);
+      state.pendingUpdate = true;
+      state.lastUpdate = `${reason}: update scheduled`;
+      dynamicFields.dataset.updating = "true";
+      renderState();
+      updateTimer = setTimeout(() => {
+        state.pendingUpdate = false;
+        state.lastUpdate = `${reason}: dependent subtree replaced`;
+        renderDynamicFields();
+      }, 180);
+    }
+
+    function renderDynamicFields() {
+      state.rerenders += 1;
+      dynamicFields.replaceChildren();
+      dynamicFields.dataset.updating = "false";
+
+      const typeSelect = customSelect({
+        id: "activity-type",
+        name: "activity_type",
+        options: ACTIVITY_TYPES,
+        value: state.activityType,
+        onChange(value) {
+          state.activityType = value;
+          state.description = "";
+          scheduleRerender("Activity Type changed");
+        }
+      });
+      dynamicFields.append(field("Activity Type", typeSelect, { required: true }));
+
+      const descriptions = state.activityType === "employer" ? EMPLOYER_DESCRIPTIONS : state.activityType === "preparation" ? PREPARATION_DESCRIPTIONS : [{ value: "", label: "-- Select One --" }];
+      const descriptionSelect = customSelect({
+        id: "activity-description",
+        name: "activity_description",
+        options: descriptions,
+        value: state.description,
+        onChange(value) {
+          state.description = value;
+          scheduleRerender("Activity Description changed");
+        }
+      });
+      dynamicFields.append(field("Activity Description", descriptionSelect, { required: true }));
+
+      if (state.description === "other-employer" || state.description === "other-preparation") dynamicFields.append(field("Other Activity Notes", textArea("other-activity-notes", "other_activity_notes"), { required: true }));
+
+      if (state.activityType === "employer") {
+        const methodSelect = customSelect({ id: "contact-method", name: "contact_method", options: CONTACT_METHODS, value: "", onChange() {} });
+        dynamicFields.append(field("Method of Contact", methodSelect, { required: true }));
+        dynamicFields.append(field("Position Applied For", textInput("position", "position"), { required: true }));
+        const resultSelect = customSelect({ id: "contact-result", name: "contact_result", options: CONTACT_RESULTS, value: "", onChange() {} });
+        dynamicFields.append(field("Result of Contact", resultSelect, { required: true }));
+        dynamicFields.append(field("Notes", textArea("notes", "notes")));
+        dynamicFields.append(field("Business / Organization", textInput("organization", "organization"), { required: true }));
+      } else if (state.activityType === "preparation") {
+        dynamicFields.append(field("Notes", textArea("notes", "notes")));
+      }
+
+      renderState();
+    }
+
+    function renderState() {
+      fixtureState.textContent = [
+        `Activity type: ${state.activityType || "(none)"}`,
+        `Description: ${state.description || "(none)"}`,
+        `Dependent subtree renders: ${state.rerenders}`,
+        `Selection changes: ${state.selectionChanges}`,
+        `Update pending: ${state.pendingUpdate}`,
+        `Submit attempts: ${state.submitAttempts}`,
+        `Navigation attempts: ${state.navigationAttempts}`,
+        `Last update: ${state.lastUpdate}`
+      ].join("\n");
+    }
+
+    document.querySelector("#activity-form").addEventListener("submit", event => {
+      event.preventDefault();
+      state.submitAttempts += 1;
+      state.lastUpdate = "Submit was blocked by the fixture";
+      renderState();
+    });
+
+    document.querySelector("#next").addEventListener("click", () => {
+      state.navigationAttempts += 1;
+      state.lastUpdate = "Navigation was blocked by the fixture";
+      renderState();
+    });
+
+    renderDynamicFields();
+  </script>
+</body>
+</html>

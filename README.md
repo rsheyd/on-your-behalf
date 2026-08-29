@@ -100,7 +100,7 @@ Completed onboarding direction and the remaining profile, portability, and first
 - `manifest.json` — Manifest V3 extension configuration and version.
 - `src/background.js` — AI request orchestration.
 - `src/content.js` — page scanning and filling.
-- `src/form-core.js`, `src/prompt.js`, `src/providers.js`, and `src/document-import.js` — standalone form, prompt, parsing, provider, and document-import logic.
+- `src/form-core.js`, `src/form-state.js`, `src/prompt.js`, `src/providers.js`, and `src/document-import.js` — standalone form, scan-state, prompt, parsing, provider, and document-import logic.
 - `src/vendor/` — browser-ready PDF.js distribution with its license.
 - `src/popup.*` — compact scan-and-fill action.
 - `src/options.*` — profile and provider settings.

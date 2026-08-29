@@ -21,7 +21,14 @@ After `Activity Type` is set to `Employer Contact`, it additionally displays:
 - Result of Contact.
 - Notes.
 
-Other Activity Type and Activity Description branches still need to be inventoried before implementation. The inventory should record the available options under each parent selection, which controls appear, disappear, or change, whether elements are replaced or updated in place, and whether each update is immediate or asynchronous.
+Live inspection was completed in a separate Chrome work profile after the form failed to load reliably in the usual profile. The form uses PrimeFaces custom comboboxes backed by hidden native selects. Each Activity Type or Activity Description change sends an authenticated AJAX request and replaces the full activity-controls subtree. The Date input is outside that replaced subtree. Closed combobox panels contain no option elements; their visible option elements are created only when a menu opens.
+
+Activity Type has two non-placeholder options:
+
+- `Employer Contact` provides Inquiry, state-posting response, internet-posting response, submitted application, sent resume, interview, staffing-agency registration, and other-employer descriptions. It reveals Method of Contact, Position Applied For, Result of Contact, Notes, and Business / Organization. Choosing Other employer contact also inserts a required Other Activity Notes textarea.
+- `Work Search Preparation Activity` provides company or industry research, career exploration, workshop, Department of Labor appointment, LinkedIn networking, other social networking, job coaching, resume work, Job Bank or Job Scout registration, head-hunter or outplacement work, and other-preparation descriptions. It reveals Notes. Choosing Other preparation activity also inserts a required Other Activity Notes textarea.
+
+All ordinary descriptions within a type retain the same field shape. Switching from Employer Contact to Work Search Preparation Activity removes the employer-specific controls. Because the subtree is replaced, surviving logical controls receive new DOM elements even when their generated IDs remain textually identical.
 
 ## Offline testing approach
 
@@ -29,14 +36,18 @@ Use the live NY form only as a behavioral reference. A browser's “Save Page As
 
 Do not commit saved page bundles, HAR files, cookies, account identifiers, entered work-search records, or other authenticated material. Capture screenshots and sanitized DOM snippets only when needed, and remove personal information before retaining them.
 
-Create a small repository-owned fixture, likely `test/conditional-form.html`, that reproduces the relevant behavior without copying the site's application code or presentation. The fixture should include:
+The NY form may not load reliably in the user's usual Chrome profile and is often accessed through Safari instead. For live observation, use whichever already authenticated browser can load the form without changing account or security settings. If Chrome has the problem, try another available Chrome profile before concluding that the site behavior cannot be inspected there. Record which browser and profile context was used because profile-specific extensions, cached state, or browser compatibility may affect the observed behavior. Safari may be used for behavioral reference, but final OYB validation still requires a Chrome profile in which both the extension and form work.
+
+The repository-owned `test/conditional-form.html` fixture reproduces the relevant behavior without copying the site's application code or presentation. The fixture includes:
 
 - A text date field with a JavaScript date picker.
 - A parent Activity Type select that reveals dependent controls.
 - An Activity Description select that can reveal another dependency level.
 - Both immediate and slightly delayed DOM updates.
 - A branch in which previously visible child fields disappear after a parent answer changes.
-- Native selects whose handlers respond to bubbling `input` and `change` events.
+- PrimeFaces-like visible custom comboboxes backed by hidden native selects.
+- Menus whose option elements exist only while the custom menu is open.
+- A complete dependent-subtree replacement after a short asynchronous delay.
 - A submit control with instrumentation that confirms OYB never activates it.
 
 ## Proposed fill workflow
@@ -96,19 +107,23 @@ After the fixture passes, perform a final smoke test on the live NY form without
 
 ### Phase 1: Offline reference fixture
 
-Inventory the remaining branches of the live NY form using screenshots and sanitized field metadata. Capture the options available under each Activity Type, the Activity Description options under each type, the fields each combination reveals, whether controls are hidden or recreated, and the timing of updates.
+Status: completed on August 29, 2026.
 
-Build `test/conditional-form.html` with one realistic two-level path and at least one alternate branch that removes previously visible fields. Include an immediate update, a delayed update, changed options on an existing control, and submit instrumentation.
+Inventory the remaining branches of the live NY form using screenshots and sanitized field metadata. Capture the options available under each Activity Type, the Activity Description options under each type, the fields each combination reveals, whether controls are hidden or recreated, the timing of updates, and the browser/profile context used for observation.
 
-Completion gate: the fixture reproduces the important NY behavior when operated manually without containing authenticated code, session data, or personal information.
+Build `test/conditional-form.html` with one realistic two-level path and at least one alternate branch that removes previously visible fields. Include an immediate menu update, a delayed subtree replacement, changed options on an existing logical control, and submit instrumentation.
+
+Completion gate: satisfied. Local browser verification covered both activity types, the extra Other Activity Notes field, delayed subtree replacement, employer-field removal after switching types, and zero submit or navigation attempts. The fixture contains no authenticated code, session data, or personal information.
 
 ### Phase 2: Pure state logic and stable scanning
+
+Status: completed on August 29, 2026.
 
 Preserve identifiers on DOM elements that survive rescanning. Extract pure helpers that compare consecutive scans and classify fields as new, changed, unchanged, disappeared, filled, or resolved.
 
 Add Node tests for stable identity, option-list changes, stale-suggestion invalidation, unresolved aggregation, progress detection, and round-limit enforcement.
 
-Completion gate: scan comparison and multi-round state transitions are proven by Node tests without requiring Chrome.
+Completion gate: satisfied. Node tests prove logical-key generation, stable ID reuse across replacement elements, option-sensitive fingerprints, four-way scan comparison, pending-field selection, unresolved reconciliation, stale-suggestion rejection, and bounded round decisions without requiring Chrome.
 
 ### Phase 3: Mutation-aware orchestration
 

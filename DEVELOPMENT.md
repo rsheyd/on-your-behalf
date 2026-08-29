@@ -9,7 +9,7 @@ For contribution expectations and the safety invariants that every change must p
 1. Edit files in `src/` or `manifest.json`.
 2. Run `npm test` and `npm run check`.
 3. Open `chrome://extensions` and reload **On Your Behalf**.
-4. Serve this repository over HTTP and open `test/manual-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
+4. Serve this repository over HTTP and open `test/manual-form.html` or `test/conditional-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
 5. Exercise the popup action and inspect the extension service worker for provider or messaging errors.
 
 For example:
@@ -27,6 +27,10 @@ Test at least:
 - A page containing text inputs and textareas.
 - Native selects, radio groups, and checkboxes.
 - The ARIA combobox in `test/manual-form.html`.
+- The custom comboboxes and replaced dependent subtree in `test/conditional-form.html`.
+- Both conditional activity branches, including switching from Employer Contact to Work Search Preparation Activity and confirming that employer-only fields disappear.
+- The delayed dependent update and the extra Other Activity Notes field in `test/conditional-form.html`.
+- The fixture counters remain at zero for submit and navigation attempts after OYB runs.
 - A React or Vue controlled input.
 - A form containing a password field alongside ordinary fields; only the password must be skipped.
 - A payment-card and one-time-code field; each must remain empty.
