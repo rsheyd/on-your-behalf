@@ -13,12 +13,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-async function handleGenerate({ page, fields }) {
+async function handleGenerate({ page, fields, formContext = "", includeProfile = true }) {
   const { profile = "", provider = "", apiKeys = {}, model = "" } = await chrome.storage.local.get([
     "profile", "provider", "apiKeys", "model"
   ]);
-  if (!profile.trim()) throw new Error("Add your profile in Settings first.");
-  const prompt = buildPrompt({ profile, page, fields });
+  const selectedProfile = includeProfile ? profile.trim() : "";
+  const selectedContext = String(formContext || "").trim();
+  if (!selectedProfile && !selectedContext) throw new Error("Include your saved profile or add context for this form.");
+  const prompt = buildPrompt({ profile: selectedProfile, formContext: selectedContext, page, fields });
   const text = await generateSuggestions({ provider, apiKey: apiKeys[provider] || "", model, prompt });
   return parseFormAnalysis(text, fields);
 }

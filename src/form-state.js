@@ -102,6 +102,12 @@
     return [...fieldMap(fields).values()].filter(field => field.empty !== false && !excluded.has(field.fieldId));
   }
 
+  function customOptionDisplayLabel(value, options = []) {
+    const target = normalizedText(value);
+    const match = options.find(option => normalizedText(option?.value) === target || normalizedText(option?.label) === target);
+    return match ? String(match.label || match.value || "").trim() : String(value ?? "").trim();
+  }
+
   function reconcileUnresolved({ previous = [], updates = [], visibleFields = [], answeredIds = [], invalidatedIds = [] } = {}) {
     const visibleIds = new Set(fieldMap(visibleFields).keys());
     const answered = new Set(answeredIds);
@@ -144,6 +150,7 @@
 
   root.OpenFormFillerState = Object.freeze({
     compareFieldScans,
+    customOptionDisplayLabel,
     fieldFingerprint,
     logicalFieldKey,
     nextRoundDecision,

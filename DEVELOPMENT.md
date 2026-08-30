@@ -30,6 +30,10 @@ Test at least:
 - The custom comboboxes and replaced dependent subtree in `test/conditional-form.html`.
 - Both conditional activity branches, including switching from Employer Contact to Work Search Preparation Activity and confirming that employer-only fields disappear.
 - The delayed dependent update and the extra Other Activity Notes field in `test/conditional-form.html`.
+- A site-wide search field outside the fixture's main content is not included in fill requests.
+- Custom options remain fillable when the visible menu provides labels but keeps option values only in a hidden backing select.
+- One popup action reaches the final dependent fields after delayed custom-select updates.
+- Temporary context can be used with the saved profile disabled, restored after reopening the popup when session retention is enabled, and removed with Clear context.
 - The fixture counters remain at zero for submit and navigation attempts after OYB runs.
 - A React or Vue controlled input.
 - A form containing a password field alongside ordinary fields; only the password must be skipped.
@@ -42,6 +46,7 @@ Test at least:
 - Switching providers preserves the current provider's entered or saved key and model choice.
 - Saved keys are masked; newly entered keys can be shown, hidden, and cleared.
 - Each supported provider connects successfully with a real API key.
+- The OpenAI connection check uses a valid minimum output-token value.
 - Connection testing reports invalid-key, quota or billing, unavailable-model, rate-limit, and network failures clearly.
 - Clearing a saved key does not become permanent until settings are saved.
 - Editing a filled value before manually submitting.

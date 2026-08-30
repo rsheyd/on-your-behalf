@@ -78,7 +78,7 @@ export async function testProviderConnection({ provider, apiKey, model, request 
     await requestJson("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model: selectedModel, input: "Reply with OK.", max_output_tokens: 8 })
+      body: JSON.stringify({ model: selectedModel, input: "Reply with OK.", max_output_tokens: 16 })
     }, request);
     return;
   }

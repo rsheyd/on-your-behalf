@@ -112,7 +112,10 @@
   }
 
   function scan() {
-    const candidates = [...document.querySelectorAll('input, textarea, select, [role="combobox"]')];
+    const selector = 'input, textarea, select, [role="combobox"]';
+    const main = document.querySelector("main");
+    const scanRoot = main?.querySelector(selector) ? main : document;
+    const candidates = [...scanRoot.querySelectorAll(selector)];
     const seenRadioGroups = new Set();
     const identityOccurrences = new Map();
     const fields = [];
@@ -129,7 +132,7 @@
         const groupName = element.name || label;
         if (seenRadioGroups.has(groupName)) continue;
         seenRadioGroups.add(groupName);
-        const radios = [...document.querySelectorAll('input[type="radio"]')].filter(radio => (radio.name || nearbyLabel(radio)) === groupName && isVisible(radio) && !radio.disabled);
+        const radios = [...scanRoot.querySelectorAll('input[type="radio"]')].filter(radio => (radio.name || nearbyLabel(radio)) === groupName && isVisible(radio) && !radio.disabled);
         const logicalKey = formState.logicalFieldKey({ domId: "", name: element.name || groupName, kind: "radio", label });
         const fieldId = ensureId(element, logicalKey);
         radios.forEach(radio => radio.setAttribute(FIELD_ATTRIBUTE, fieldId));
@@ -216,13 +219,16 @@
 
   async function fillCustomSelect(element, value) {
     element.focus();
-    element.click();
-    await new Promise(resolve => setTimeout(resolve, 120));
+    const opener = element.querySelector(".ui-selectonemenu-trigger") || element;
+    opener.click();
+    await new Promise(resolve => setTimeout(resolve, 220));
     const target = String(value).trim().toLowerCase();
+    const visibleLabel = formState.customOptionDisplayLabel(value, optionList(element)).toLowerCase();
     const options = [...document.querySelectorAll('[role="option"]')].filter(isVisible);
     const option = options.find(item => {
       const itemValue = item.getAttribute("data-value") || item.getAttribute("value") || "";
-      return itemValue.toLowerCase() === target || text(item.textContent).toLowerCase() === target;
+      const itemLabel = text(item.textContent).toLowerCase();
+      return itemValue.toLowerCase() === target || itemLabel === target || itemLabel === visibleLabel;
     });
     if (!option) return false;
     option.click();
@@ -235,13 +241,20 @@
     return type === "radio" || type === "checkbox" || element instanceof HTMLSelectElement || element.getAttribute("role") === "combobox";
   }
 
-  function waitForPageSettled(quietMs = 180, maxMs = 1600) {
+  function waitForPageSettled({ quietMs = 250, minMs = 500, maxMs = 3000 } = {}) {
     return new Promise(resolve => {
+      const startedAt = performance.now();
       let quietTimer = null;
       let finished = false;
       let maxTimer = null;
       const finish = () => {
         if (finished) return;
+        const remainingMinimum = minMs - (performance.now() - startedAt);
+        if (remainingMinimum > 0) {
+          clearTimeout(quietTimer);
+          quietTimer = setTimeout(finish, remainingMinimum);
+          return;
+        }
         finished = true;
         clearTimeout(quietTimer);
         clearTimeout(maxTimer);
@@ -313,7 +326,8 @@
         filled += 1;
         filledIds.push(suggestion.fieldId);
         if (choiceControl(element)) {
-          await waitForPageSettled();
+          const customSelectDelay = element.getAttribute("role") === "combobox";
+          await waitForPageSettled({ minMs: customSelectDelay ? 1500 : 500 });
           latestScan = scan();
           const comparison = formState.compareFieldScans(beforeFields, latestScan.fields);
           mutated = comparison.newFields.length > 0 || comparison.changedFields.length > 0 || comparison.disappearedFields.length > 0;

@@ -63,7 +63,21 @@ Replace the current one-time scan and fill with a bounded multi-pass workflow:
 
 The workflow must detect changed existing controls as well as newly visible controls. For example, Activity Description may remain visible while its option list changes after Activity Type is selected; any Activity Description suggestion based on the old options must be discarded and regenerated.
 
+Live PrimeFaces validation showed that authenticated AJAX replacements can begin well after a short quiet period. Custom combobox fills therefore require a minimum observation window in addition to mutation-based quiet detection; otherwise OYB may rescan the old subtree and stop until the user starts another fill action.
+
 Begin fixture testing with a strict limit of six rounds plus an overall time limit, then select the final values from observed behavior. The workflow should avoid unnecessary provider requests when a round reveals no new or changed fields and may safely retain suggestions only for controls whose relevant metadata and option lists remain unchanged.
+
+## Form-specific context controls
+
+Conditional forms often describe a particular event or transaction whose facts do not belong in the user's durable profile. Before running the multi-pass workflow, the popup should let the user choose the information OYB may use:
+
+- Add a **Context for this form** control that reveals a text area for pasted notes, AI-generated answers, or a single structured activity record.
+- Add an **Include saved profile** toggle so the user can omit the durable profile when it is irrelevant to the form.
+- Keep form-specific context ephemeral by default rather than adding it to the saved profile automatically. Offer opt-in session retention that restores the context when the popup reopens, stores it only in `chrome.storage.session`, and provides an immediate clear action.
+- Treat pasted context as user-provided facts and keep it logically separate from page content, which remains untrusted.
+- Clearly disclose that enabled context sources and scanned field metadata are sent to the configured AI provider when the user starts filling.
+
+The initial implementation may accept freeform text. For forms that record one item at a time, guidance should encourage the user to provide one event or activity per fill action. Structured submission-packet import is a possible later extension, not a requirement for conditional-form support.
 
 ## Field identity and state
 
@@ -127,25 +141,33 @@ Completion gate: satisfied. Node tests prove logical-key generation, stable ID r
 
 ### Phase 3: Mutation-aware orchestration
 
+Status: completed on August 29, 2026.
+
 Implement bounded scan, generate, fill, observe, and rescan rounds in the content and popup flows. Stop applying downstream suggestions after a choice control produces a meaningful mutation, preserve user-entered values, discard stale suggestions, and enforce both round and overall time limits.
+
+Add the **Context for this form** control and **Include saved profile** toggle to the popup. Pass only the enabled context sources into each provider request, support optional browser-session retention for repeated fills, and do not merge form context into the saved profile.
 
 Update progress and final reporting to explain additional-question checks, successful fills, unresolved questions, technical failures, and safety-limit termination.
 
-Completion gate: one popup action fills the fixture through two dependency levels without overwriting user-entered values or activating submit.
+Completion gate: satisfied. One popup action with synthetic form-specific context and the saved profile disabled filled Date, Employer Contact, Other employer contact, Other Activity Notes, Email, Position Applied For, Waiting for a response, and Notes through two asynchronous dependency levels. The fixture recorded three dependent-subtree renders, two selection changes, zero submit attempts, and zero navigation attempts. Business / Organization remained empty because it was absent from the supplied context, confirming that the provider did not invent the missing fact. Automated pending-field coverage confirms that existing non-empty values are excluded from fill rounds.
 
 ### Phase 4: Live validation and release
+
+Status: completed on August 29, 2026.
 
 Run syntax checks, Node tests, and every branch of the manual fixture matrix. Perform a non-submitting smoke test on the live NY form and record any site behavior the fixture did not cover.
 
 Update documentation and current limitations, bump `manifest.json` to `0.4.0`, and record conditional-form support under `0.4.0` in `CHANGELOG.md`.
 
-Completion gate: the NY Employer Contact path reaches its final visible fields for user review without submission or navigation.
+Completion gate: satisfied. Offline validation covered both activity branches, changed option lists, extra Other fields, disappearing employer controls, delayed subtree replacement, and zero submit or navigation attempts. Live NY validation exposed and then verified fixes for site-wide Search leakage, hidden-value versus visible-label option matching, nested PrimeFaces menu triggers, and delayed authenticated AJAX replacement. The Employer Contact path reached its final visible fields for review without Save, Save & Next, submission, or navigation.
 
 ## Acceptance criteria
 
 - OYB fills a parent choice and subsequently discovers and fills the dependent fields revealed by that choice.
 - OYB detects when an existing field's available options change and does not apply a suggestion generated from its earlier options.
 - OYB supports at least two dependency levels in the offline fixture.
+- The user can provide temporary form-specific context and exclude the saved profile from a fill request.
+- Temporary context is not silently added to the durable profile.
 - The process terminates predictably and does not make repeated requests for unchanged fields.
 - Existing user-entered values are not overwritten.
 - Suggestions for disappeared fields are ignored safely.

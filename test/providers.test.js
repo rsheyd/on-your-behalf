@@ -15,6 +15,7 @@ test("connection checks send a minimal request for each provider", async () => {
     });
     assert.equal(call.options.method, "POST");
     assert.match(call.options.body, /Reply with OK/);
+    if (provider === "openai") assert.equal(JSON.parse(call.options.body).max_output_tokens, 16);
   }
 });
 

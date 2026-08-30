@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.4.0
+
+- Added bounded multi-round filling for forms whose visible fields and option lists change after earlier answers.
+- Added stable field identity, stale-suggestion rejection, user-value preservation, and delayed AJAX settling for custom selects.
+- Added temporary form-specific context with an option to exclude the saved profile from a fill request.
+- Added opt-in browser-session context retention and an immediate clear action without merging temporary notes into the saved profile.
+- Improved PrimeFaces-style custom-select support by mapping hidden option values to visible labels and activating nested menu triggers.
+- Limited scans to the page's main content region when available so unrelated site-wide controls are excluded.
+- Increased popup width, typography, textarea size, spacing, and control hit areas for readability.
+- Updated the OpenAI connection check to satisfy the provider's minimum output-token requirement.
+
 ## 0.3.3
 
 - Added clearly labeled starter-template, file-import, and extended field-guide paths directly to profile settings, with contextual format and privacy guidance.

@@ -16,7 +16,8 @@
     input, textarea, .custom-select { box-sizing: border-box; width: min(100%, 440px); padding: 9px 11px; border: 1px solid #66738a; border-radius: 5px; background: white; color: inherit; font: inherit; }
     textarea { min-height: 110px; resize: vertical; }
     .custom-select { position: relative; cursor: pointer; }
-    .custom-select::after { content: "▾"; float: right; }
+    .custom-select { display: flex; justify-content: space-between; }
+    .ui-selectonemenu-trigger { padding-left: 18px; }
     .custom-select[aria-expanded="true"] { outline: 2px solid #3977b8; outline-offset: 1px; }
     .select-panel { width: min(100%, 440px); margin-top: 4px; border: 1px solid #66738a; border-radius: 5px; background: white; box-shadow: 0 6px 20px rgb(23 32 51 / 16%); }
     .select-panel[hidden] { display: none; }
@@ -29,6 +30,9 @@
   </style>
 </head>
 <body>
+  <label for="site-search">Site Search</label>
+  <input id="site-search" name="site_search" type="search">
+  <main>
   <h1>Conditional work activity fixture</h1>
   <p class="notice">This repository-owned test page contains no account or session data. It imitates a form that replaces dependent controls after a custom dropdown selection. Nothing is sent over the network.</p>
   <form id="activity-form">
@@ -43,6 +47,7 @@
     </div>
   </form>
   <output id="fixture-state" class="fixture-state" aria-live="polite"></output>
+  </main>
   <script>
     const ACTIVITY_TYPES = [
       { value: "", label: "-- Select One --" },
@@ -128,6 +133,8 @@
     function customSelect({ id, name, options, value, onChange }) {
       const wrapper = document.createElement("div");
       const control = document.createElement("div");
+      const visibleLabel = document.createElement("span");
+      const trigger = document.createElement("span");
       const panel = document.createElement("div");
       const backingSelect = document.createElement("select");
       const selected = options.find(option => option.value === value) || options[0];
@@ -140,7 +147,11 @@
       control.setAttribute("aria-expanded", "false");
       control.setAttribute("aria-haspopup", "listbox");
       control.setAttribute("aria-owns", `${id}-panel`);
-      control.textContent = selected.label;
+      visibleLabel.className = "ui-selectonemenu-label";
+      visibleLabel.textContent = selected.label;
+      trigger.className = "ui-selectonemenu-trigger";
+      trigger.textContent = "▾";
+      control.append(visibleLabel, trigger);
 
       panel.id = `${id}-panel`;
       panel.className = "select-panel";
@@ -169,13 +180,12 @@
           const item = document.createElement("div");
           item.tabIndex = 0;
           item.setAttribute("role", "option");
-          item.setAttribute("data-value", option.value);
           item.setAttribute("aria-selected", String(option.value === backingSelect.value));
           item.textContent = option.label;
           item.addEventListener("click", event => {
             event.stopPropagation();
             backingSelect.value = option.value;
-            control.textContent = option.label;
+            visibleLabel.textContent = option.label;
             close();
             state.selectionChanges += 1;
             onChange(option.value);
@@ -185,7 +195,7 @@
         panel.append(listbox);
       }
 
-      control.addEventListener("click", () => panel.hidden ? open() : close());
+      trigger.addEventListener("click", () => panel.hidden ? open() : close());
       control.addEventListener("keydown", event => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();

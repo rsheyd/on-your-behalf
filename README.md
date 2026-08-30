@@ -1,10 +1,10 @@
 # On Your Behalf
 
-An open-source, local-first Chrome extension that fills web forms from a personal text profile using your choice of AI provider.
+An open-source, local-first Chrome extension that fills web forms from a personal text profile or temporary form-specific context using your choice of AI provider.
 
 **On Your Behalf (OYB)** fills forms from a profile you control, while leaving every answer and the final submission in your hands.
 
-Open a form, click the extension, and choose **Scan and fill this page**. The extension finds non-sensitive fields, asks the selected AI provider for profile-grounded suggestions, and places those suggestions directly into the page. Filled fields receive a green outline so you can review and edit every answer before submitting the form yourself.
+Open a form, click the extension, choose which information to include, and select **Scan and fill this page**. The extension finds non-sensitive fields, asks the selected AI provider for grounded suggestions, and places those suggestions directly into the page. Filled fields receive a green outline so you can review and edit every answer before submitting the form yourself.
 
 **Table of contents**
 
@@ -22,10 +22,13 @@ Open a form, click the extension, and choose **Scan and fill this page**. The ex
 ## Features
 
 - Uses one flexible, plain-text profile instead of a rigid collection of profile fields.
+- Accepts temporary context for a particular form or event and can fill without sending the saved profile.
+- Optionally remembers temporary context until Chrome closes, with an immediate clear action.
 - Imports editable profile text locally from DOCX, Markdown, plain text, and text-based PDF documents.
 - Supports Google Gemini, OpenAI, and Anthropic with your own API key.
 - Provides provider-specific key setup links, connection testing, and plain-language setup errors.
 - Fills text inputs, textareas, checkboxes, radio groups, native selects, and common ARIA comboboxes.
+- Rescans and continues through bounded rounds when choices reveal, remove, or change dependent fields.
 - Reports profile facts that are missing and questions that require the user's judgment.
 - Handles React-style controlled text fields using native value setters and browser events.
 - Skips password, payment-card, and authentication-code fields individually.
@@ -57,12 +60,14 @@ Provider settings guide users through getting, testing, and safely storing their
 5. Pin **On Your Behalf** from Chrome's Extensions menu.
 6. Open the extension and select **Settings**.
 7. Add a text profile, choose a provider, follow its API-key setup link, and test the connection.
-8. Open a web form, click the extension, and select **Scan and fill this page**.
+8. Open a web form, click the extension, optionally add context for that form, choose whether to include the saved profile, and select **Scan and fill this page**.
 9. Review every green-outlined answer before submitting the form yourself.
 
 In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. [`PROFILE-TEMPLATE.md`](PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable, may be sent to your selected AI provider when filling forms, and is not saved until you choose **Save settings**.
 
 After filling, the popup lists factual answers missing from your profile and questions that require a decision. Use **Open profile settings** to add durable facts; judgment calls remain for the current form.
+
+Use **Context for this form** for facts about a particular event, application, claim, activity, or transaction that should not become part of the durable profile. **Remember until Chrome closes** stores that draft in browser-session extension storage so it can survive popup reopenings; **Clear context** removes it immediately. For forms that record one item at a time, provide one event or activity per fill action.
 
 After changing source files, click the extension's reload button on `chrome://extensions` before testing again.
 
@@ -72,11 +77,14 @@ The extension has no server of its own. Your profile and provider-specific API k
 
 The extension sends the selected provider:
 
-- Your text profile.
+- Your text profile when **Include saved profile** is enabled.
+- Temporary form-specific context when you provide it.
 - The page origin/path, title, and primary heading. URL query parameters and fragments are removed.
 - Labels and metadata for the detected non-sensitive form fields.
 
-It does not intentionally send current field values. Page text is treated as untrusted input in the AI prompt, and returned suggestions are restricted to field identifiers created during the current scan. These controls reduce prompt-injection risk but cannot eliminate it. Review suggestions before submitting sensitive or consequential forms.
+It does not intentionally send current field values. Page text is treated as untrusted input in the AI prompt, and returned suggestions are restricted to field identifiers created during the current scan. Conditional forms may require several provider requests, each limited to newly discovered or meaningfully changed empty fields. These controls reduce prompt-injection risk but cannot eliminate it. Review suggestions before submitting sensitive or consequential forms.
+
+Saved profiles and API keys use durable `chrome.storage.local`. Optional temporary-context retention uses `chrome.storage.session`, is not merged into the profile, and is intended to clear with the browser session.
 
 Choosing **Test connection** sends the selected provider a small request asking it to reply with `OK`. The test does not include your profile or information from a web form, but it may use a small amount of API quota.
 
@@ -120,9 +128,9 @@ Please do not disclose suspected vulnerabilities in a public issue. Follow [`SEC
 
 ## Current limitations
 
-- Custom selects vary widely; v1 supports common visible ARIA `combobox`/`option` patterns, not every component library.
+- Custom selects vary widely; OYB supports common visible ARIA `combobox`/`option` patterns and tested PrimeFaces-style widgets, not every component library.
 - Cross-origin iframes and closed shadow roots are not scanned.
-- Dynamically added form steps require another scan.
+- Conditional fields on the current page are rescanned automatically, but navigation to a separate page still requires another fill action.
 - File uploads and rich-text editors are skipped.
 - Provider keys are stored locally but are not protected like credentials in a password manager.
 - There is no Ollama support yet.

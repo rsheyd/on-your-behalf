@@ -15,6 +15,29 @@
         </div>
         <button id="settings" class="text-button" type="button">Settings</button>
       </div>
+      <section class="context-controls" aria-labelledby="context-heading">
+        <div class="context-heading-row">
+          <h2 id="context-heading">Information to use</h2>
+          <button id="toggle-context" class="text-button" type="button" aria-expanded="false" aria-controls="form-context-panel">Add context for this form</button>
+        </div>
+        <div id="form-context-panel" hidden>
+          <label for="form-context">Temporary notes or one activity record</label>
+          <textarea id="form-context" rows="6" placeholder="Paste facts that apply only to this form…"></textarea>
+          <div class="context-session-row">
+            <label class="context-session-toggle" for="remember-context">
+              <input id="remember-context" type="checkbox">
+              Remember until Chrome closes
+            </label>
+            <button id="clear-context" class="text-button" type="button">Clear context</button>
+          </div>
+          <p class="context-note">Session retention is optional and never adds these notes to your saved profile.</p>
+        </div>
+        <label class="profile-toggle" for="include-profile">
+          <input id="include-profile" type="checkbox" checked>
+          Include saved profile
+        </label>
+        <p class="provider-note">Enabled information and scanned field details are sent to your configured AI provider.</p>
+      </section>
       <button id="fill" class="primary" type="button">Scan and fill this page</button>
       <div id="progress" class="progress" hidden aria-hidden="true">
         <div id="progress-bar" class="progress-bar"></div>

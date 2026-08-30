@@ -4,6 +4,7 @@ import "../src/form-state.js";
 
 const {
   compareFieldScans,
+  customOptionDisplayLabel,
   fieldFingerprint,
   logicalFieldKey,
   nextRoundDecision,
@@ -13,6 +14,16 @@ const {
   unansweredFields,
   validSuggestionsForScan
 } = globalThis.OpenFormFillerState;
+
+test("maps hidden custom-select values to their visible labels", () => {
+  const options = [
+    { value: "0", label: "-- Select One --" },
+    { value: "1", label: "Employer Contact" }
+  ];
+  assert.equal(customOptionDisplayLabel("1", options), "Employer Contact");
+  assert.equal(customOptionDisplayLabel("Employer Contact", options), "Employer Contact");
+  assert.equal(customOptionDisplayLabel("unknown", options), "unknown");
+});
 
 function field(fieldId, overrides = {}) {
   return {

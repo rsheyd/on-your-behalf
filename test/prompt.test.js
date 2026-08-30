@@ -13,6 +13,18 @@ test("prompt labels page content as untrusted and includes the profile", () => {
   assert.match(prompt, /Never suggest passwords/);
 });
 
+test("prompt keeps form-specific context separate and can omit the saved profile", () => {
+  const prompt = buildPrompt({
+    profile: "",
+    formContext: "Organization: Hollygov\nMethod: Email",
+    page: { title: "Work activity" },
+    fields: [{ fieldId: "organization", kind: "input", label: "Organization" }]
+  });
+  assert.match(prompt, /CONTEXT FOR THIS FORM \(user-provided facts\)/);
+  assert.match(prompt, /Organization: Hollygov/);
+  assert.doesNotMatch(prompt, /SAVED PROFILE \(user-provided facts\)/);
+});
+
 test("prompt preserves date input metadata and explains native versus display formats", () => {
   const prompt = buildPrompt({
     profile: "My date of birth is February 20, 1989.",

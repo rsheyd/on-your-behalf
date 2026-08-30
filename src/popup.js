@@ -11,10 +11,39 @@ const unresolvedPanel = document.querySelector("#unresolved");
 const unresolvedTitle = document.querySelector("#unresolved-title");
 const unresolvedList = document.querySelector("#unresolved-list");
 const editProfileButton = document.querySelector("#edit-profile");
+const toggleContextButton = document.querySelector("#toggle-context");
+const formContextPanel = document.querySelector("#form-context-panel");
+const formContextInput = document.querySelector("#form-context");
+const includeProfileInput = document.querySelector("#include-profile");
+const rememberContextInput = document.querySelector("#remember-context");
+const clearContextButton = document.querySelector("#clear-context");
+const FORM_CONTEXT_SESSION_KEY = "formContextDraft";
+let contextSaveTimer = null;
 
 settingsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
 editProfileButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
 fillButton.addEventListener("click", runFill);
+formContextInput.addEventListener("input", scheduleContextSave);
+rememberContextInput.addEventListener("change", async () => {
+  clearTimeout(contextSaveTimer);
+  if (rememberContextInput.checked) await persistRememberedContext();
+  else await chrome.storage.session.remove(FORM_CONTEXT_SESSION_KEY);
+});
+clearContextButton.addEventListener("click", async () => {
+  clearTimeout(contextSaveTimer);
+  formContextInput.value = "";
+  await chrome.storage.session.remove(FORM_CONTEXT_SESSION_KEY);
+  formContextInput.focus();
+});
+toggleContextButton.addEventListener("click", () => {
+  const expanded = toggleContextButton.getAttribute("aria-expanded") === "true";
+  toggleContextButton.setAttribute("aria-expanded", String(!expanded));
+  toggleContextButton.textContent = expanded ? "Add context for this form" : "Hide form context";
+  formContextPanel.hidden = expanded;
+  if (!expanded) formContextInput.focus();
+});
+
+const sessionContextReady = restoreSessionContext();
 
 let startedAt = 0;
 let elapsedTimer = null;
@@ -22,10 +51,15 @@ let waitingTimer = null;
 let currentStatus = "";
 
 async function runFill() {
+  await sessionContextReady;
+  if (rememberContextInput.checked) await persistRememberedContext();
   showUnresolved([]);
   beginProgress();
   setStage("scan", "Scanning visible form fields…");
   try {
+    const formContext = formContextInput.value.trim();
+    const includeProfile = includeProfileInput.checked;
+    if (!includeProfile && !formContext) throw new Error("Include your saved profile or add context for this form.");
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error("Open a normal web page before filling.");
 
@@ -82,7 +116,7 @@ async function runFill() {
       scheduleWaitingMessage(providerName, pending.length);
       const generated = await chrome.runtime.sendMessage({
         type: "GENERATE_SUGGESTIONS",
-        payload: { page: currentScan.page, fields: pending }
+        payload: { page: currentScan.page, fields: pending, formContext, includeProfile }
       });
       if (!generated?.ok) throw new Error(generated?.error || "Could not generate suggestions.");
 
@@ -155,6 +189,29 @@ async function runFill() {
   } catch (error) {
     finishProgress(error.message || "Something went wrong.", true);
   }
+}
+
+async function restoreSessionContext() {
+  const stored = await chrome.storage.session.get(FORM_CONTEXT_SESSION_KEY);
+  const remembered = String(stored[FORM_CONTEXT_SESSION_KEY] || "");
+  if (!remembered) return;
+  formContextInput.value = remembered;
+  rememberContextInput.checked = true;
+  formContextPanel.hidden = false;
+  toggleContextButton.setAttribute("aria-expanded", "true");
+  toggleContextButton.textContent = "Hide form context";
+}
+
+function scheduleContextSave() {
+  if (!rememberContextInput.checked) return;
+  clearTimeout(contextSaveTimer);
+  contextSaveTimer = setTimeout(() => persistRememberedContext(), 200);
+}
+
+async function persistRememberedContext() {
+  const value = formContextInput.value.trim();
+  if (value) await chrome.storage.session.set({ [FORM_CONTEXT_SESSION_KEY]: value });
+  else await chrome.storage.session.remove(FORM_CONTEXT_SESSION_KEY);
 }
 
 function beginProgress() {
