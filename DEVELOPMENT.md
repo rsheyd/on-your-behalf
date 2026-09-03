@@ -9,8 +9,8 @@ For contribution expectations and the safety invariants that every change must p
 1. Edit files in `src/` or `manifest.json`.
 2. Run `npm test` and `npm run check`.
 3. Open `chrome://extensions` and reload **On Your Behalf**.
-4. Refresh any already-open target page so it cannot retain code from an older extension version.
-5. Serve this repository over HTTP and open `test/manual-form.html` or `test/conditional-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
+4. Reopen the popup and confirm its version/source-update footer. The scanner revision replaces older injected OYB code on an already-open page; refreshing the target page remains a useful clean-state check.
+5. Serve this repository over HTTP and open `test/manual-form.html`, `test/conditional-form.html`, or `test/employment-history-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
 6. Exercise the popup action and inspect the extension service worker for provider or messaging errors.
 
 For example:
@@ -30,6 +30,13 @@ Test at least:
 - A radio group whose individual option labels are not mistaken for the surrounding question.
 - A native select whose option list is not included in its extracted field label.
 - Native selects, radio groups, and checkboxes.
+- A styled checkbox whose real input is hidden but whose associated label remains visible.
+- Opening the popup lists populated semantic or visually marked form sections without contacting the AI provider.
+- Selecting a section limits every conditional fill round to that section while Entire page preserves the original behavior.
+- Replacement mode includes existing values only within the selected scope, updates each field once, and resets when the popup closes.
+- Repeated rows remain coherent across employer/title/date-style fields, existing blank rows are used first, and a recognized in-scope Add another control creates at most one row per round when the model requests it.
+- Add another controls remain detectable when a zero-size link or button wrapper contains visibly rendered children.
+- Closing and reopening the popup preserves its final status and unresolved list; starting another fill clears that stored result.
 - The ARIA combobox in `test/manual-form.html`.
 - The custom comboboxes and replaced dependent subtree in `test/conditional-form.html`.
 - Both conditional activity branches, including switching from Employer Contact to Work Search Preparation Activity and confirming that employer-only fields disappear.
@@ -49,6 +56,8 @@ Test at least:
 - Importing over a non-empty profile asks for confirmation and does not save automatically.
 - Adding several supporting files keeps them separate from the editable profile, and enable, disable, and remove changes do not become permanent until settings are saved.
 - The popup accurately reports the number of enabled supporting files and can exclude them from a fill request.
+- Affirmative-choice and assumption settings persist, reach the prompt, and keep consequential assumptions behind the nested opt-in.
+- Supported and chosen answers receive the standard outline; inferred answers receive an amber outline.
 - Switching providers preserves the current provider's entered or saved key and model choice.
 - Saved keys are masked; newly entered keys can be shown, hidden, and cleared.
 - Each supported provider connects successfully with a real API key.

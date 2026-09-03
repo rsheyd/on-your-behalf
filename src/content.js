@@ -1,17 +1,20 @@
 (function initializeOpenFormFiller() {
-  const CONTENT_VERSION = "0.6.0";
-  if (globalThis.__openFormFillerLoaded === CONTENT_VERSION) return;
+  const CONTENT_REVISION = "0.6.0-20260903.0910";
+  if (globalThis.__openFormFillerLoaded === CONTENT_REVISION) return;
   if (globalThis.__openFormFillerMessageListener) {
     chrome.runtime.onMessage.removeListener(globalThis.__openFormFillerMessageListener);
   }
-  globalThis.__openFormFillerLoaded = CONTENT_VERSION;
+  globalThis.__openFormFillerLoaded = CONTENT_REVISION;
 
   const FIELD_ATTRIBUTE = "data-open-form-filler-id";
+  const ACTION_ATTRIBUTE = "data-open-form-filler-action-id";
   const HIGHLIGHT_CLASS = "open-form-filler-filled";
+  const INFERRED_CLASS = "open-form-filler-inferred";
   const STYLE_ID = "open-form-filler-style";
   const formState = globalThis.OpenFormFillerState;
   const fieldLabels = globalThis.OpenFormFillerLabels;
   const logicalFieldIds = new Map();
+  const logicalActionIds = new Map();
   let counter = 0;
 
   function text(value, maxLength = 500) {
@@ -19,18 +22,40 @@
     return normalized.length > maxLength ? `${normalized.slice(0, maxLength - 1)}…` : normalized;
   }
 
-  function isVisible(element) {
+  function isRendered(element) {
+    if (!element) return false;
     const style = getComputedStyle(element);
     const rect = element.getBoundingClientRect();
     return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
   }
 
+  function associatedLabel(element) {
+    const explicit = element.id ? document.querySelector(`label[for="${CSS.escape(element.id)}"]`) : null;
+    return explicit || element.closest("label");
+  }
+
+  function isVisible(element) {
+    if (isRendered(element)) return true;
+    const type = (element.type || "").toLowerCase();
+    return ["checkbox", "radio"].includes(type) && isRendered(associatedLabel(element));
+  }
+
+  function isActionRendered(element) {
+    return isRendered(element) || [...(element?.querySelectorAll("*") || [])].some(isRendered);
+  }
+
   function directLabelCandidates(element) {
     const ariaLabelledBy = element.getAttribute("aria-labelledby");
-    const ariaText = ariaLabelledBy?.split(/\s+/).map(id => document.getElementById(id)?.textContent).filter(Boolean).join(" ");
-    const explicit = element.id ? document.querySelector(`label[for="${CSS.escape(element.id)}"]`)?.textContent : "";
-    const wrapping = element.closest("label")?.textContent;
-    const legend = element.closest("fieldset")?.querySelector("legend")?.textContent;
+    const ariaText = ariaLabelledBy?.split(/\s+/).map(id => {
+      const labelledBy = document.getElementById(id);
+      return labelledBy?.innerText || labelledBy?.textContent;
+    }).filter(Boolean).join(" ");
+    const explicitLabel = element.id ? document.querySelector(`label[for="${CSS.escape(element.id)}"]`) : null;
+    const wrappingLabel = element.closest("label");
+    const legendElement = element.closest("fieldset")?.querySelector("legend");
+    const explicit = explicitLabel?.innerText || explicitLabel?.textContent;
+    const wrapping = wrappingLabel?.innerText || wrappingLabel?.textContent;
+    const legend = legendElement?.innerText || legendElement?.textContent;
     return [element.getAttribute("aria-label"), ariaText, explicit, wrapping, legend];
   }
 
@@ -68,6 +93,28 @@
       .join(" "), 300);
   }
 
+  function sectionHeadings(scanRoot) {
+    const selector = 'h1, h2, h3, h4, h5, h6, [role="heading"], [class*="sectionTitle" i], [class*="section-header" i], [class*="section_header" i]';
+    const occurrences = new Map();
+    return [...scanRoot.querySelectorAll(selector)].filter(isRendered).map(element => {
+      const label = text(element.innerText || element.textContent, 120).replace(/^\*\s*/, "");
+      if (!label) return null;
+      const base = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "section";
+      const occurrence = occurrences.get(base) || 0;
+      occurrences.set(base, occurrence + 1);
+      return { element, id: `${base}:${occurrence}`, label };
+    }).filter(Boolean);
+  }
+
+  function sectionForElement(element, headings) {
+    let match = null;
+    for (const heading of headings) {
+      if (heading.element === element || heading.element.contains(element) || (heading.element.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)) match = heading;
+      else if (match) break;
+    }
+    return match ? { sectionId: match.id, sectionLabel: match.label } : { sectionId: "", sectionLabel: "" };
+  }
+
   function sensitive(element, label) {
     const autocomplete = (element.autocomplete || element.getAttribute("autocomplete") || "").toLowerCase().split(/\s+/).pop();
     const sensitiveAutocomplete = new Set([
@@ -92,6 +139,40 @@
     });
     if (element.getAttribute(FIELD_ATTRIBUTE) !== fieldId) element.setAttribute(FIELD_ATTRIBUTE, fieldId);
     return fieldId;
+  }
+
+  function ensureActionId(element, logicalKey) {
+    const currentId = element.getAttribute(ACTION_ATTRIBUTE) || "";
+    const actionId = currentId || logicalActionIds.get(logicalKey) || `off-action-${Date.now().toString(36)}-${logicalActionIds.size + 1}`;
+    logicalActionIds.set(logicalKey, actionId);
+    if (currentId !== actionId) element.setAttribute(ACTION_ATTRIBUTE, actionId);
+    return actionId;
+  }
+
+  function semanticHint(element, label) {
+    return text(formState.semanticFieldHint({ domId: element.id, name: element.name, label }), 120);
+  }
+
+  function indexedEntry(element) {
+    return formState.repeatedEntryOrdinal({ domId: element.id, name: element.name });
+  }
+
+  function structuralEntry(element, selector) {
+    let container = element.parentElement;
+    for (let depth = 0; container?.parentElement && depth < 4; depth += 1, container = container.parentElement) {
+      const peers = [...container.parentElement.children].filter(peer => peer.querySelectorAll(selector).length >= 2);
+      if (peers.length >= 2 && peers.includes(container)) return { parent: container.parentElement, ordinal: peers.indexOf(container) + 1 };
+    }
+    return null;
+  }
+
+  function currentValue(element, groupElements = [element]) {
+    const type = (element.type || "").toLowerCase();
+    if (type === "radio") return groupElements.find(item => item.checked)?.value || "";
+    if (type === "checkbox") return Boolean(element.checked);
+    const select = backingSelect(element);
+    if (select) return select.value;
+    return text(element.value || element.getAttribute("aria-valuetext") || "", 300);
   }
 
   function backingSelect(element) {
@@ -146,9 +227,31 @@
     const main = document.querySelector("main");
     const scanRoot = main?.querySelector(selector) ? main : document;
     const candidates = [...scanRoot.querySelectorAll(selector)];
+    const headings = sectionHeadings(scanRoot);
     const seenRadioGroups = new Set();
     const identityOccurrences = new Map();
+    const repeatParents = new Map();
     const fields = [];
+
+    function repeatMetadata(element, label, section, groupElements = [element]) {
+      const indexedOrdinal = indexedEntry(element);
+      const structural = indexedOrdinal ? null : structuralEntry(element, selector);
+      if (!indexedOrdinal && !structural) return {};
+      let groupId;
+      if (indexedOrdinal) {
+        groupId = `${section.sectionId || "page"}:indexed-records`;
+      } else {
+        if (!repeatParents.has(structural.parent)) repeatParents.set(structural.parent, `${section.sectionId || "page"}:repeated:${repeatParents.size + 1}`);
+        groupId = repeatParents.get(structural.parent);
+      }
+      return {
+        groupId,
+        groupLabel: section.sectionLabel || "Repeated entries",
+        entryOrdinal: indexedOrdinal || structural.ordinal,
+        semanticHint: semanticHint(element, label),
+        currentValue: currentValue(element, groupElements)
+      };
+    }
 
     for (const element of candidates) {
       if (fields.length >= 150) break;
@@ -166,6 +269,7 @@
         if (sensitive(element, label)) continue;
         const logicalKey = formState.logicalFieldKey({ domId: "", name: element.name || groupName, kind: "radio", label });
         const fieldId = ensureId(element, logicalKey);
+        const section = sectionForElement(element, headings);
         radios.forEach(radio => radio.setAttribute(FIELD_ATTRIBUTE, fieldId));
         fields.push({
           fieldId,
@@ -175,12 +279,16 @@
           name: element.name || "",
           required: radios.some(radio => radio.required),
           empty: elementIsEmpty(element, radios),
+          ...section,
+          ...repeatMetadata(element, label, section, radios),
           options: radios.map((radio, index) => ({ value: radio.value, label: optionLabels[index] || radio.value }))
         });
         continue;
       }
 
-      const label = nearbyLabel(element);
+      const nearby = nearbyLabel(element);
+      const indexedOrdinal = indexedEntry(element);
+      const label = indexedOrdinal ? semanticHint(element, nearby) : nearby;
       if (sensitive(element, label)) continue;
 
       const kind = type === "checkbox" ? "checkbox"
@@ -193,6 +301,7 @@
       const occurrence = identityOccurrences.get(identityBase) || 0;
       identityOccurrences.set(identityBase, occurrence + 1);
       const logicalKey = formState.logicalFieldKey(identity, occurrence);
+      const section = sectionForElement(element, headings);
       fields.push({
         fieldId: ensureId(element, logicalKey),
         logicalKey,
@@ -210,7 +319,27 @@
         max: element.getAttribute("max") || "",
         required: Boolean(element.required || element.getAttribute("aria-required") === "true"),
         empty: elementIsEmpty(element),
+        ...section,
+        ...repeatMetadata(element, label, section),
         options: optionList(element)
+      });
+    }
+
+    const actionCandidates = [...scanRoot.querySelectorAll('button, input[type="button"], a, [role="button"]')];
+    const actions = [];
+    for (const element of actionCandidates) {
+      if (actions.length >= 20 || !isActionRendered(element) || element.disabled || element.getAttribute("aria-disabled") === "true") continue;
+      const label = text(element.innerText || element.value || element.getAttribute("aria-label"), 120);
+      if (!formState.isAddRepeatAction({ label, href: element.getAttribute("href") || "", anchor: element instanceof HTMLAnchorElement })) continue;
+      const section = sectionForElement(element, headings);
+      if (!fields.some(field => field.groupId && field.sectionId === section.sectionId)) continue;
+      const logicalKey = `${section.sectionId || "page"}:${label.toLowerCase()}`;
+      actions.push({
+        actionId: ensureActionId(element, logicalKey),
+        type: "add_repeat_entry",
+        label,
+        groupLabel: section.sectionLabel || label.replace(/^\s*\+?\s*add(?:\s+(?:another|new))?\s*/i, "") || "entry",
+        ...section
       });
     }
 
@@ -220,7 +349,8 @@
         url: `${location.origin}${location.pathname}`,
         heading: text(document.querySelector("h1")?.textContent, 200)
       },
-      fields
+      fields,
+      actions
     };
   }
 
@@ -238,20 +368,22 @@
     dispatch(element);
   }
 
-  function highlight(element) {
+  function highlight(element, basis = "supported") {
     ensureStyle();
-    element.classList.add(HIGHLIGHT_CLASS);
+    const target = isRendered(element) ? element : associatedLabel(element) || element;
+    target.classList.add(HIGHLIGHT_CLASS);
+    target.classList.toggle(INFERRED_CLASS, basis === "inferred");
   }
 
   function ensureStyle() {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement("style");
     style.id = STYLE_ID;
-    style.textContent = `.${HIGHLIGHT_CLASS}{outline:2px solid #18a56b !important;outline-offset:2px !important;transition:outline-color .2s ease}`;
+    style.textContent = `.${HIGHLIGHT_CLASS}{outline:2px solid #18a56b !important;outline-offset:2px !important;transition:outline-color .2s ease}.${INFERRED_CLASS}{outline-color:#d88a16 !important}`;
     document.documentElement.append(style);
   }
 
-  async function fillCustomSelect(element, value) {
+  async function fillCustomSelect(element, value, basis) {
     element.focus();
     const opener = element.querySelector(".ui-selectonemenu-trigger") || element;
     opener.click();
@@ -266,7 +398,7 @@
     });
     if (!option) return false;
     option.click();
-    highlight(element);
+    highlight(element, basis);
     return true;
   }
 
@@ -311,21 +443,22 @@
     });
   }
 
-  async function fill(suggestions, expectedFields = []) {
+  async function fill(suggestions, expectedFields = [], replaceExisting = false) {
     let filled = 0;
     let mutated = false;
     const filledIds = [];
     const failed = [];
     const skipped = [];
+    const basisCounts = { supported: 0, inferred: 0, chosen: 0 };
     let latestScan = scan();
-    const validSuggestions = expectedFields.length
+    const validSuggestions = formState.orderSuggestionsForFill(expectedFields.length
       ? formState.validSuggestionsForScan(suggestions, expectedFields, latestScan.fields)
-      : suggestions;
+      : suggestions, latestScan.fields);
     for (const suggestion of validSuggestions) {
       const elements = [...document.querySelectorAll(`[${FIELD_ATTRIBUTE}="${CSS.escape(suggestion.fieldId)}"]`)];
       const element = elements[0];
       if (!element || sensitive(element, nearbyLabel(element))) continue;
-      if (!elementIsEmpty(element, elements)) {
+      if (!replaceExisting && !elementIsEmpty(element, elements)) {
         skipped.push(suggestion.fieldId);
         continue;
       }
@@ -338,26 +471,27 @@
           if (!radio) throw new Error("No matching radio option");
           radio.click();
           dispatch(radio);
-          highlight(radio);
+          highlight(radio, suggestion.basis);
         } else if (type === "checkbox") {
           const checked = suggestion.value === true || String(suggestion.value).toLowerCase() === "true";
           if (element.checked !== checked) element.click();
           dispatch(element);
-          highlight(element);
+          highlight(element, suggestion.basis);
         } else if (element instanceof HTMLSelectElement) {
           const target = String(suggestion.value).toLowerCase();
           const option = [...element.options].find(item => item.value.toLowerCase() === target || text(item.textContent).toLowerCase() === target);
           if (!option) throw new Error("No matching select option");
           element.value = option.value;
           dispatch(element);
-          highlight(element);
+          highlight(element, suggestion.basis);
         } else if (element.getAttribute("role") === "combobox") {
-          if (!await fillCustomSelect(element, suggestion.value)) throw new Error("No matching custom option");
+          if (!await fillCustomSelect(element, suggestion.value, suggestion.basis)) throw new Error("No matching custom option");
         } else {
           setNativeValue(element, suggestion.value);
-          highlight(element);
+          highlight(element, suggestion.basis);
         }
         filled += 1;
+        basisCounts[suggestion.basis] = (basisCounts[suggestion.basis] || 0) + 1;
         filledIds.push(suggestion.fieldId);
         if (choiceControl(element)) {
           const customSelectDelay = element.getAttribute("role") === "combobox";
@@ -373,7 +507,21 @@
       }
     }
     if (!mutated) latestScan = scan();
-    return { filled, filledIds, failed, skipped, mutated, scan: latestScan };
+    return { filled, filledIds, failed, skipped, basisCounts, mutated, scan: latestScan };
+  }
+
+  async function activateAction(action) {
+    const beforeScan = scan();
+    const allowed = beforeScan.actions.find(item => item.actionId === action?.actionId && item.type === "add_repeat_entry");
+    if (!allowed) return { activated: false, scan: beforeScan };
+    const element = document.querySelector(`[${ACTION_ATTRIBUTE}="${CSS.escape(allowed.actionId)}"]`);
+    if (!element || !isActionRendered(element)) return { activated: false, scan: beforeScan };
+    element.click();
+    await waitForPageSettled({ minMs: 500 });
+    const afterScan = scan();
+    const comparison = formState.compareFieldScans(beforeScan.fields, afterScan.fields);
+    const activated = comparison.newFields.length > 0 || comparison.changedFields.length > 0 || comparison.disappearedFields.length > 0;
+    return { activated, scan: afterScan };
   }
 
   const messageListener = (message, _sender, sendResponse) => {
@@ -382,7 +530,11 @@
       return false;
     }
     if (message?.type === "FILL_FORM") {
-      fill(message.suggestions || [], message.expectedFields || []).then(result => sendResponse({ ok: true, ...result }));
+      fill(message.suggestions || [], message.expectedFields || [], message.replaceExisting === true).then(result => sendResponse({ ok: true, ...result }));
+      return true;
+    }
+    if (message?.type === "ACTIVATE_FORM_ACTION") {
+      activateAction(message.action).then(result => sendResponse({ ok: true, ...result }));
       return true;
     }
     return false;

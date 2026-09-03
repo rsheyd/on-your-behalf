@@ -11,10 +11,28 @@
 - Added multi-file import, per-file enablement and removal, and combined size and count safeguards.
 - Added a per-fill control for including or excluding all enabled supporting files.
 - Kept supporting documents separately labeled in provider prompts, with the user-reviewed profile taking precedence when sources conflict.
-- Added a dedicated OYB extension and toolbar icon set at 16, 32, 48, and 128 pixels.
+- Added a distinctive plum, coral, and gold OYB proxy-mark icon set at 16, 32, 48, and 128 pixels.
 - Added nearby question-text detection for controls without accessible labels, including Guidepoint-style screening questions.
 - Prevented radio choices and long select option lists from being mistaken for field questions.
 - Allowed newer injected scanner versions to replace their prior message listener cleanly after future extension reloads.
+- Simplified and centralized the AI answering policy, with stronger use of concrete details across all enabled sources.
+- Added optional affirmative handling for acknowledgements and consent, plus reasonable assumptions with a separate opt-in for consequential declarations.
+- Marked inferred answers with an amber outline while keeping all filled answers visibly outlined for review.
+- Added support for styled checkboxes and radio buttons that hide the real input behind a visible associated label.
+- Kept answer-basis metadata out of the text written into form fields.
+- Added a locally populated section dropdown that can limit scanning, AI requests, and filling to fields under one detected heading.
+- Updated the fill button label to reflect whether the whole page or one section is selected.
+- Added an unchecked per-run option to replace existing answers within the selected page or section scope.
+- Added repeated-entry grouping and date-part hints so employment, education, address, dependent, and reference rows remain coherent.
+- Allowed the AI to request one recognized, in-scope Add another row per bounded fill round when the enabled sources contain another useful record.
+- Fixed same-version development reloads so newly injected scanner logic replaces an older scanner already running on the page.
+- Added a version and source-update marker at the bottom of the popup for quickly confirming which unpacked build is loaded.
+- Fixed Add another links whose visible contents are floated inside a zero-size wrapper.
+- Added lightweight collection, entry, and semantic-role metadata directly to repeated fields while keeping every fillable control in the primary answer list.
+- Kept the last fill status and missing-information list visible after the popup closes, until the next fill begins.
+- Made repeated-record filling deterministic around controls that reveal or hide related date fields.
+- Prevented field-revealing checkbox changes from scrambling the remaining values in a repeated record.
+- Clarified indexed field labels and made the add-row decision explicit after the model has seen existing repeated records.
 
 ## 0.4.0
 

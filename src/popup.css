@@ -22,6 +22,12 @@ button { font: inherit; cursor: pointer; }
 .context-session-row .text-button { font-size: 14px; }
 .profile-toggle { display: flex; align-items: center; gap: 9px; margin-top: 14px; font-size: 15px; }
 .supporting-toggle { margin-top: 9px; }
+.scope-row { margin-top: 14px; }
+.scope-row[hidden] { display: none; }
+.scope-row label { display: block; margin-bottom: 6px; font-size: 14px; font-weight: 650; }
+.scope-row select { box-sizing: border-box; width: 100%; border: 1px solid #b9bcb5; border-radius: 8px; padding: 9px 10px; background: #fff; color: inherit; font: inherit; }
+.nested-toggle { margin-left: 27px; font-size: 13px; }
+.nested-toggle[hidden] { display: none; }
 .supporting-toggle small { color: #777a73; font-size: 12px; font-weight: 400; }
 .provider-note { margin-top: 7px; }
 .primary { width: 100%; border: 0; border-radius: 9px; padding: 13px 16px; background: #167755; color: white; font-weight: 650; }
@@ -43,10 +49,11 @@ button { font: inherit; cursor: pointer; }
 .unresolved li + li { margin-top: 5px; }
 .unresolved .reason { color: #777a73; font-size: 13px; }
 .secondary { width: 100%; border: 1px solid #b9bcb5; border-radius: 8px; padding: 8px 12px; background: transparent; color: inherit; }
+.build-info { margin-top: 18px; text-align: center; color: #85877f; font-size: 11px; }
 @media (prefers-color-scheme: dark) {
   body { background: #20221f; color: #f5f5f2; }
   p { color: #b7bab3; }
-  .context-controls, #form-context, #answering-posture { border-color: #464942; background: #292c28; }
+  .context-controls, #form-context, #answering-posture, .scope-row select { border-color: #464942; background: #292c28; }
   .unresolved { border-color: #464942; }
   .unresolved ul { color: #d8dad4; }
 }

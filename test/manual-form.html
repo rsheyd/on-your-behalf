@@ -10,6 +10,8 @@
     input, textarea, select, [role="combobox"] { display: block; min-width: 300px; padding: 8px; }
     [role="listbox"] { border: 1px solid #aaa; width: 316px; }
     [role="option"] { padding: 8px; cursor: pointer; }
+    .styled-checkbox { display: inline-block; width: 18px; height: 18px; border: 2px solid #777; vertical-align: middle; }
+    input.styled-control { display: none; }
   </style>
 </head>
 <body>
@@ -26,18 +28,37 @@
       <label><input type="radio" name="contact" value="phone"> Phone</label>
     </fieldset>
     <label><input type="checkbox" name="adult"> I am at least 18 years old</label>
+    <div><span class="styled-checkbox" aria-hidden="true"></span><input class="styled-control" id="terms" type="checkbox" name="terms"><label for="terms">I agree to the volunteer terms</label></div>
     <label>Custom team selector
       <div id="team" role="combobox" tabindex="0" aria-controls="teams">Choose a team</div>
       <div id="teams" role="listbox"><div role="option" data-value="kitchen">Kitchen</div><div role="option" data-value="garden">Garden</div></div>
     </label>
     <label>Password (must remain empty) <input type="password" name="password"></label>
     <label>Card number (must remain empty) <input name="card" autocomplete="cc-number"></label>
+    <h2>Employment History</h2>
+    <div id="employment-rows">
+      <fieldset class="employment-row"><legend>Employment entry 1</legend><label>Employer <input id="Company_0" name="Company_0"></label><label>Job title <input id="JobTitle_0" name="JobTitle_0"></label><label>Current <input id="CurrentEmployment_0" name="CurrentEmployment_0" type="checkbox"></label><label>Start date <select id="StartMonth_0" name="StartMonth_0"><option value="">Month</option><option value="01">January</option><option value="06">June</option></select><select id="StartYear_0" name="StartYear_0"><option value="">Year</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select></label><label>End date <select id="EndMonth_0" name="EndMonth_0"><option value="">Month</option><option value="01">January</option><option value="06">June</option></select><select id="EndYear_0" name="EndYear_0"><option value="">Year</option><option value="2024">2024</option><option value="2025">2025</option><option value="2026">2026</option></select></label></fieldset>
+    </div>
+    <button id="add-employment" type="button">Add Another Company</button>
     <button type="submit">Submit (must never be clicked)</button>
   </form>
   <script>
     document.querySelectorAll('[role="option"]').forEach(option => option.addEventListener('click', () => {
       document.querySelector('#team').textContent = option.textContent;
     }));
+    document.querySelector('#add-employment').addEventListener('click', () => {
+      const rows = document.querySelector('#employment-rows');
+      const index = rows.children.length;
+      const row = rows.firstElementChild.cloneNode(true);
+      row.querySelector('legend').textContent = `Employment entry ${index + 1}`;
+      row.querySelectorAll('input, select').forEach(control => {
+        control.id = control.id.replace(/_0$/, `_${index}`);
+        control.name = control.name.replace(/_0$/, `_${index}`);
+        if (control.type === 'checkbox') control.checked = false;
+        else control.value = '';
+      });
+      rows.append(row);
+    });
     document.querySelector('form').addEventListener('submit', event => { event.preventDefault(); alert('Manual submit only'); });
   </script>
 </body>

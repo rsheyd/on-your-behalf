@@ -6,10 +6,14 @@ const {
   compareFieldScans,
   customOptionDisplayLabel,
   fieldFingerprint,
+  isAddRepeatAction,
   logicalFieldKey,
   nextRoundDecision,
+  orderSuggestionsForFill,
   pendingFields,
   reconcileUnresolved,
+  repeatedEntryOrdinal,
+  semanticFieldHint,
   stableFieldId,
   unansweredFields,
   validSuggestionsForScan
@@ -44,6 +48,21 @@ test("builds stable logical keys from DOM identity with safe fallbacks", () => {
   assert.equal(logicalFieldKey({ name: "position", kind: "input", label: "Position" }), "name:input:position:0");
   assert.equal(logicalFieldKey({ name: "position", kind: "input", label: "Position" }, 1), "name:input:position:1");
   assert.equal(logicalFieldKey({ kind: "input", label: "Position Applied For", occurrence: 2 }, 2), "label:input:position applied for:2");
+});
+
+test("derives repeated entry ordinals and semantic hints from common field identities", () => {
+  assert.equal(repeatedEntryOrdinal({ domId: "StartMonth_0" }), 1);
+  assert.equal(repeatedEntryOrdinal({ name: "employment[3][company]" }), 4);
+  assert.equal(repeatedEntryOrdinal({ name: "company" }), 0);
+  assert.equal(semanticFieldHint({ domId: "StartMonth_2" }), "start month");
+  assert.equal(semanticFieldHint({ name: "employment[3][job_title]" }), "employment job title");
+});
+
+test("recognizes only non-navigating add-row actions", () => {
+  assert.equal(isAddRepeatAction({ label: "Add Another Company" }), true);
+  assert.equal(isAddRepeatAction({ label: "+ Add new reference", anchor: true, href: "#" }), true);
+  assert.equal(isAddRepeatAction({ label: "Add and continue" }), false);
+  assert.equal(isAddRepeatAction({ label: "Add employer", anchor: true, href: "/next" }), false);
 });
 
 test("preserves IDs on surviving elements and reuses them for replacements", () => {
@@ -107,6 +126,11 @@ test("selects visible empty fields while preserving existing and blocked values"
   }).map(item => item.fieldId), ["empty"]);
 });
 
+test("includes existing values only when replacement is enabled", () => {
+  const fields = [field("empty", { empty: true }), field("existing", { empty: false }), field("already-filled", { empty: false })];
+  assert.deepEqual(unansweredFields(fields, { includeExisting: true, filledIds: ["already-filled"] }).map(item => item.fieldId), ["empty", "existing"]);
+});
+
 test("reconciles unresolved fields with visibility and answered state", () => {
   const result = reconcileUnresolved({
     previous: [
@@ -143,6 +167,12 @@ test("rejects suggestions for removed or meaningfully changed fields", () => {
     { fieldId: "changed", value: "0" },
     { fieldId: "removed", value: "gone" }
   ], expected, current), [{ fieldId: "kept", value: "value" }]);
+});
+
+test("orders checkbox state changes around the rest of a repeated record", () => {
+  const fields = [field("current-a", { kind: "checkbox" }), field("company", { kind: "input" }), field("end-year", { kind: "select" }), field("current-b", { kind: "checkbox" })];
+  const suggestions = [{ fieldId: "current-a", value: true }, { fieldId: "company", value: "Example Co." }, { fieldId: "end-year", value: "2025" }, { fieldId: "current-b", value: false }];
+  assert.deepEqual(orderSuggestionsForFill(suggestions, fields).map(item => item.fieldId), ["current-b", "company", "end-year", "current-a"]);
 });
 
 test("makes bounded round decisions", () => {

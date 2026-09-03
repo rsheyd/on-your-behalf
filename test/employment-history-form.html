@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Employment history compatibility fixture</title>
+  <style>
+    body { max-width: 1180px; margin: 32px auto; color: #555; font: 18px/1.35 Arial, sans-serif; }
+    h1, h2 { color: #96aa4c; }
+    .section { border: 1px solid #ccd0d3; padding: 24px; }
+    .employment-row { display: grid; grid-template-columns: 2fr 2fr .7fr 1.5fr 1.5fr; gap: 22px; margin: 10px 0; border: 1px solid #ccd0d3; padding: 18px; }
+    label { display: block; color: #333; }
+    input, select { box-sizing: border-box; width: 100%; margin-top: 7px; padding: 10px; font: inherit; }
+    input[type="checkbox"] { width: 24px; height: 24px; }
+    .date-pair { display: flex; gap: 7px; }
+    #add-employment { display: inline-block; margin: 12px 0; color: #0671ce; cursor: pointer; }
+    #fixture-state { white-space: pre-wrap; background: #f5f5f5; padding: 14px; font: 14px/1.4 ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <h1>Advisor Profile Fixture</h1>
+  <section class="section">
+    <h2>Employment History</h2>
+    <label>Years of Sector Experience
+      <select id="SectorExperience" name="SectorExperience"><option value="">Select</option><option>1-5</option><option>6-10</option><option>11-15</option><option>16-20</option><option>20+</option></select>
+    </label>
+    <div id="employment-rows"></div>
+    <a id="add-employment" href="JavaScript:void(0);"><span>➕</span> <span>Add Another Company</span></a>
+  </section>
+  <h2>Fixture state</h2>
+  <div id="fixture-state"></div>
+  <script>
+    const months = [["", "Month"], ["01", "January"], ["02", "February"], ["03", "March"], ["04", "April"], ["05", "May"], ["06", "June"], ["07", "July"], ["08", "August"], ["09", "September"], ["10", "October"], ["11", "November"], ["12", "December"]];
+    const years = [["", "Year"], ...Array.from({ length: 20 }, (_, index) => { const year = String(2026 - index); return [year, year]; })];
+    const initialRows = [
+      { company: "Wrong Current Co.", title: "Old Current Title", current: true, startMonth: "01", startYear: "2024" },
+      { company: "Wrong Past Co.", title: "Old Past Title", current: true, startMonth: "02", startYear: "2020" },
+      { company: "", title: "", current: false, startMonth: "", startYear: "", endMonth: "", endYear: "" }
+    ];
+    let addCount = 0;
+
+    function select(id, name, values, value, disabled = false) {
+      const element = document.createElement("select");
+      element.id = id;
+      element.name = name;
+      element.disabled = disabled;
+      for (const [optionValue, label] of values) element.add(new Option(label, optionValue));
+      element.value = value || "";
+      return element;
+    }
+
+    function labelled(text, control) {
+      const label = document.createElement("label");
+      label.append(text, control);
+      return label;
+    }
+
+    function addRow(values = {}) {
+      const index = document.querySelectorAll(".employment-row").length;
+      const row = document.createElement("div");
+      row.className = "employment-row";
+      row.dataset.entry = String(index + 1);
+      const company = Object.assign(document.createElement("input"), { id: `Company_${index}`, name: `Company_${index}`, value: values.company || "" });
+      const title = Object.assign(document.createElement("input"), { id: `JobFunction_${index}`, name: `JobFunction_${index}`, value: values.title || "" });
+      const current = Object.assign(document.createElement("input"), { id: `CurrentEmployment_${index}`, name: `CurrentEmployment_${index}`, type: "checkbox", checked: Boolean(values.current) });
+      const start = document.createElement("div");
+      start.className = "date-pair";
+      start.append(select(`StartMonth_${index}`, `StartMonth_${index}`, months, values.startMonth), select(`StartYear_${index}`, `StartYear_${index}`, years, values.startYear));
+      const end = document.createElement("div");
+      end.className = "date-pair";
+      end.append(select(`EndMonth_${index}`, `EndMonth_${index}`, months, values.endMonth, current.checked), select(`EndYear_${index}`, `EndYear_${index}`, years, values.endYear, current.checked));
+      current.addEventListener("change", () => {
+        end.querySelectorAll("select").forEach(control => { control.disabled = current.checked; if (current.checked) control.value = ""; });
+        renderState();
+      });
+      row.append(labelled(index === 0 ? "* Employer" : "Employer", company), labelled(index === 0 ? "* Job Title" : "Job Title", title), labelled("Currently Employed", current), labelled(index === 0 ? "* Start Date" : "Start Date", start), labelled("End Date", end));
+      document.querySelector("#employment-rows").append(row);
+      row.querySelectorAll("input, select").forEach(control => control.addEventListener("change", renderState));
+      renderState();
+    }
+
+    function renderState() {
+      const rows = [...document.querySelectorAll(".employment-row")].map((row, index) => ({
+        entry: index + 1,
+        company: row.querySelector(`[id="Company_${index}"]`).value,
+        title: row.querySelector(`[id="JobFunction_${index}"]`).value,
+        current: row.querySelector(`[id="CurrentEmployment_${index}"]`).checked,
+        start: `${row.querySelector(`[id="StartMonth_${index}"]`).value}/${row.querySelector(`[id="StartYear_${index}"]`).value}`,
+        end: `${row.querySelector(`[id="EndMonth_${index}"]`).value}/${row.querySelector(`[id="EndYear_${index}"]`).value}`
+      }));
+      document.querySelector("#fixture-state").textContent = JSON.stringify({ addCount, rows }, null, 2);
+    }
+
+    initialRows.forEach(addRow);
+    document.querySelector("#add-employment").addEventListener("click", () => { addCount += 1; addRow(); });
+  </script>
+</body>
+</html>

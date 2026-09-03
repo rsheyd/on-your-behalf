@@ -16,6 +16,31 @@
     return `label:${kind}:${label}:${Math.max(0, Number(occurrence) || 0)}`;
   }
 
+  function repeatedEntryOrdinal(field) {
+    const source = String(field?.domId || field?.name || "");
+    const match = source.match(/\[(\d+)\]/) || source.match(/(?:^|[_-])(\d+)(?=$|[_-])/);
+    return match ? Number(match[1]) + 1 : 0;
+  }
+
+  function semanticFieldHint(field) {
+    return String(field?.domId || field?.name || field?.label || "")
+      .replace(/\[(?:\d+)\]/g, " ")
+      .replace(/[\[\]]/g, " ")
+      .replace(/(?:^|[_-])\d+(?=$|[_-])/g, " ")
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase();
+  }
+
+  function isAddRepeatAction({ label = "", href = "", anchor = false } = {}) {
+    const normalizedLabel = String(label).trim();
+    const normalizedHref = String(href).trim();
+    if (!/^(?:\+\s*add(?:\s+|$)|add\s+(?:another|new)(?:\s+|$))/i.test(normalizedLabel) || /submit|save|continue|next/i.test(normalizedLabel)) return false;
+    return !anchor || !normalizedHref || normalizedHref === "#" || normalizedHref.toLowerCase().startsWith("javascript:");
+  }
+
   function fieldFingerprint(field) {
     const options = Array.isArray(field?.options) ? field.options.map(option => [
       String(option?.value ?? ""),
@@ -97,9 +122,9 @@
     return result;
   }
 
-  function unansweredFields(fields, { filledIds = [], resolvedIds = [], blockedIds = [] } = {}) {
+  function unansweredFields(fields, { filledIds = [], resolvedIds = [], blockedIds = [], includeExisting = false } = {}) {
     const excluded = new Set([...filledIds, ...resolvedIds, ...blockedIds]);
-    return [...fieldMap(fields).values()].filter(field => field.empty !== false && !excluded.has(field.fieldId));
+    return [...fieldMap(fields).values()].filter(field => (includeExisting || field.empty !== false) && !excluded.has(field.fieldId));
   }
 
   function customOptionDisplayLabel(value, options = []) {
@@ -141,6 +166,22 @@
     return result;
   }
 
+  function orderSuggestionsForFill(suggestions, fields) {
+    const fieldsById = fieldMap(fields);
+    const priority = suggestion => {
+      const field = fieldsById.get(suggestion?.fieldId);
+      if (field?.kind === "checkbox") {
+        const checked = suggestion.value === true || String(suggestion.value).toLowerCase() === "true";
+        return checked ? 3 : 0;
+      }
+      if (field?.kind === "input" || field?.kind === "textarea") return 1;
+      return 2;
+    };
+    return (suggestions || []).map((suggestion, index) => ({ suggestion, index }))
+      .sort((left, right) => priority(left.suggestion) - priority(right.suggestion) || left.index - right.index)
+      .map(item => item.suggestion);
+  }
+
   function nextRoundDecision({ completedRounds = 0, maxRounds = 6, pendingCount = 0, progressCount = 0 } = {}) {
     if (pendingCount <= 0) return { continue: false, reason: "stable" };
     if (completedRounds >= maxRounds) return { continue: false, reason: "round_limit" };
@@ -153,9 +194,13 @@
     customOptionDisplayLabel,
     fieldFingerprint,
     logicalFieldKey,
+    isAddRepeatAction,
     nextRoundDecision,
+    orderSuggestionsForFill,
     pendingFields,
     reconcileUnresolved,
+    repeatedEntryOrdinal,
+    semanticFieldHint,
     stableFieldId,
     unansweredFields,
     validSuggestionsForScan

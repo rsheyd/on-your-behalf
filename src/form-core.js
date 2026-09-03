@@ -24,7 +24,10 @@ export function normalizeSuggestion(raw) {
   const fieldId = typeof raw.fieldId === "string" ? raw.fieldId.trim() : "";
   if (!fieldId) return null;
   if (typeof raw.value === "string" || typeof raw.value === "boolean" || typeof raw.value === "number") {
-    return { fieldId, value: raw.value };
+    const basis = ["supported", "inferred", "chosen"].includes(raw.basis) ? raw.basis : "supported";
+    const value = typeof raw.value === "string" ? raw.value.replace(/\s*\((?:supported|inferred|chosen)\)\s*$/i, "").trim() : raw.value;
+    if (typeof value === "string" && !value) return null;
+    return { fieldId, value, basis };
   }
   return null;
 }

@@ -40,13 +40,33 @@
           <input id="include-supporting-files" type="checkbox" checked>
           <span>Include supporting files <small id="supporting-files-count"></small></span>
         </label>
+        <div id="scope-row" class="scope-row" hidden>
+          <label for="section-scope">Fill</label>
+          <select id="section-scope"><option value="">Entire page</option></select>
+        </div>
+        <label class="profile-toggle" for="replace-existing">
+          <input id="replace-existing" type="checkbox">
+          Replace existing answers in selected scope
+        </label>
         <label class="posture-label" for="answering-posture">Answering posture</label>
         <select id="answering-posture">
           <option value="strongest_truthful_case">Strongest truthful case</option>
           <option value="exact_experience_only">Exact experience only</option>
           <option value="leave_uncertain_open">Leave uncertain answers open</option>
         </select>
-        <p id="posture-note" class="context-note">Emphasizes relevant and transferable experience, but never authorizes unsupported claims.</p>
+        <p id="posture-note" class="context-note">Uses concrete relevant details and presents transferable experience positively.</p>
+        <label class="profile-toggle" for="assume-affirmative">
+          <input id="assume-affirmative" type="checkbox">
+          Assume yes/agreement for acknowledgements and consent
+        </label>
+        <label class="profile-toggle" for="allow-assumptions">
+          <input id="allow-assumptions" type="checkbox">
+          Allow reasonable assumptions
+        </label>
+        <label id="consequential-assumptions-row" class="profile-toggle nested-toggle" for="include-consequential-assumptions" hidden>
+          <input id="include-consequential-assumptions" type="checkbox">
+          Include sensitive or consequential declarations
+        </label>
         <p class="provider-note">Enabled information and scanned field details are sent to your configured AI provider.</p>
       </section>
       <button id="fill" class="primary" type="button">Scan and fill this page</button>
@@ -59,6 +79,7 @@
         <ul id="unresolved-list"></ul>
         <button id="edit-profile" class="secondary" type="button">Open profile settings</button>
       </section>
+      <p id="build-info" class="build-info"></p>
     </main>
     <script type="module" src="popup.js"></script>
   </body>

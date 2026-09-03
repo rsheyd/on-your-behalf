@@ -30,15 +30,21 @@ Open a form, click the extension, choose which information to include, and selec
 - Provides provider-specific key setup links, connection testing, and plain-language setup errors.
 - Fills text inputs, textareas, checkboxes, radio groups, native selects, and common ARIA comboboxes.
 - Rescans and continues through bounded rounds when choices reveal, remove, or change dependent fields.
+- Detects headed form sections locally and can limit a fill to one selected section.
+- Can optionally replace existing answers within the selected scope for one explicitly enabled run.
+- Keeps fields in repeated sections such as employment or education grouped by entry, and can add another blank entry when the enabled sources contain another useful record.
 - Reports profile facts that are missing and questions that require the user's judgment.
-- Offers a per-fill answering posture, including a strongest-truthful-case mode that emphasizes relevant and transferable experience without authorizing unsupported claims.
+- Keeps the latest fill status and missing-information list available when the popup is reopened, until another fill starts.
+- Offers a per-fill answering posture that controls how directly or cautiously relevant experience is presented.
+- Can affirm routine acknowledgements and consent choices when explicitly enabled.
+- Can make reasonable assumptions, mark them with an amber outline, and optionally include consequential declarations.
 - Handles React-style controlled text fields using native value setters and browser events.
 - Skips password, payment-card, and authentication-code fields individually.
 - Never submits a form or clicks a next/continue button.
 - Stores the profile, provider choice, model, and provider-specific API keys in Chrome extension-local storage.
 - Has no backend, account, analytics, or telemetry.
 - Uses `activeTab`: it can inspect a page only after you click the extension's fill action.
-- Includes a dedicated high-contrast toolbar icon designed to remain recognizable at Chrome's smallest extension-icon size.
+- Includes a distinctive proxy-mark icon designed to remain recognizable at Chrome's smallest extension-icon size.
 
 ## Screenshots
 
@@ -63,32 +69,39 @@ Provider settings guide users through getting, testing, and safely storing their
 5. Pin **On Your Behalf** from Chrome's Extensions menu.
 6. Open the extension and select **Settings**.
 7. Add a text profile, choose a provider, follow its API-key setup link, and test the connection.
-8. Open a web form, click the extension, optionally add context for that form, choose whether to include the saved profile, and select **Scan and fill this page**.
-9. Review every green-outlined answer before submitting the form yourself.
+8. Open a web form and click the extension. OYB performs a local scan and, when useful headings are found, offers an **Entire page** or individual-section scope.
+9. Optionally add context, choose which information to include, select a section if desired, and choose **Scan and fill this page**.
+10. Review every outlined answer—especially amber inferred answers—before submitting the form yourself.
 
 In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. You can also add up to 10 supporting files that remain separate from the editable profile; enable or disable each file in Settings and choose whether to include the enabled set for each fill. [`PROFILE-TEMPLATE.md`](PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported profile text and supporting files may be sent to your selected AI provider and are not saved until you choose **Save settings**.
 
-After filling, the popup lists factual answers missing from your profile and questions that require a decision. Use **Open profile settings** to add durable facts; judgment calls remain for the current form.
+After filling, the popup lists factual answers missing from your profile and questions that require a decision. **Assume yes/agreement for acknowledgements and consent** can authorize affirmative routine choices. **Allow reasonable assumptions** lets OYB fill likely answers that do not contradict your information; inferred answers receive an amber outline. A nested option can extend assumptions to sensitive or consequential declarations. Use **Open profile settings** to add durable facts.
+
+The final fill status and missing-information list remain in browser-session extension storage if the popup closes. Starting the next fill clears the previous result.
+
+By default, OYB preserves every existing answer. Enable **Replace existing answers in selected scope** to regenerate and overwrite answers on the current page or selected section. This option resets whenever the popup closes.
 
 Use **Context for this form** for facts about a particular event, application, claim, activity, or transaction that should not become part of the durable profile. **Remember until Chrome closes** stores that draft in browser-session extension storage so it can survive popup reopenings; **Clear context** removes it immediately. For forms that record one item at a time, provide one event or activity per fill action.
 
 After changing source files, click the extension's reload button on `chrome://extensions` before testing again.
 
+The popup footer shows the extension version and source-update time so you can confirm that Chrome loaded the expected development build.
+
 ## Privacy and security model
 
 The extension has no server of its own. Your profile and provider-specific API keys are stored using `chrome.storage.local`, and a form request goes directly from the extension to the provider you selected. Chrome extension-local storage is isolated from normal webpages, but it is not a dedicated password manager or hardware-backed secret store.
 
-The extension sends the selected provider:
+The popup's initial section scan stays in the browser and does not contact an AI provider. When you start a fill, the extension sends the selected provider:
 
 - Your text profile when **Include saved profile** is enabled.
 - The enabled supporting files when **Include supporting files** is enabled.
 - Temporary form-specific context when you provide it.
 - The page origin/path, title, and primary heading. URL query parameters and fragments are removed.
-- Labels and metadata for the detected non-sensitive form fields.
+- Labels and metadata for the detected non-sensitive form fields, plus existing values in detected repeated records so entries are not duplicated or mixed together.
 
-It does not intentionally send current field values. Page text is treated as untrusted input in the AI prompt, and returned suggestions are restricted to field identifiers created during the current scan. Conditional forms may require several provider requests, each limited to newly discovered or meaningfully changed empty fields. These controls reduce prompt-injection risk but cannot eliminate it. Review suggestions before submitting sensitive or consequential forms.
+It does not intentionally send current values from ordinary standalone fields. Page text is treated as untrusted input in the AI prompt, and returned suggestions and add-row requests are restricted to identifiers created during the current scan. Conditional and repeated forms may require several provider requests. These controls reduce prompt-injection risk but cannot eliminate it. Review suggestions before submitting sensitive or consequential forms.
 
-The selected model may use its general knowledge to interpret terminology and relationships between technologies, but OYB instructs it to treat only your enabled profile and form context as evidence of your personal experience. Answering posture changes how supported experience is presented; it never authorizes invented product use, pricing or sales responsibility, or other unsupported claims. Consent, acceptance, attestations, and comparable decisions remain for you.
+The selected model follows the compact answering policy in [`src/answer-policy.js`](src/answer-policy.js). It uses all enabled sources together, prefers concrete relevant details, and avoids contradicting your information or presenting adjacent experience as direct experience. Optional affirmative-choice and assumption settings extend that policy. Answering posture controls how strongly or cautiously supported experience is presented.
 
 Saved profiles, supporting-file text, and API keys use durable `chrome.storage.local`. Optional temporary-context retention uses `chrome.storage.session`, is not merged into the profile, and is intended to clear with the browser session.
 
@@ -114,6 +127,7 @@ Completed onboarding direction and the remaining profile, portability, and first
 - `manifest.json` — Manifest V3 extension configuration and version.
 - `src/background.js` — AI request orchestration.
 - `src/content.js` — page scanning and filling.
+- `src/answer-policy.js` — canonical compact AI answering policy.
 - `src/form-core.js`, `src/form-state.js`, `src/prompt.js`, `src/providers.js`, `src/document-import.js`, and `src/supporting-documents.js` — standalone form, scan-state, prompt, parsing, provider, document-import, and supporting-file logic.
 - `src/vendor/` — browser-ready PDF.js distribution with its license.
 - `src/popup.*` — compact scan-and-fill action.

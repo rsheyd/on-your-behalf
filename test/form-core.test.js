@@ -17,7 +17,29 @@ test("deduplicates and rejects malformed suggestions", () => {
     { fieldId: "", value: "bad" },
     { fieldId: "c", value: null }
   ]), [
-    { fieldId: "a", value: "first" },
-    { fieldId: "b", value: true }
+    { fieldId: "a", value: "first", basis: "supported" },
+    { fieldId: "b", value: true, basis: "supported" }
+  ]);
+});
+
+test("keeps recognized answer bases and defaults unknown ones", () => {
+  assert.deepEqual(uniqueSuggestions([
+    { fieldId: "a", value: "yes", basis: "chosen" },
+    { fieldId: "b", value: "no", basis: "inferred" },
+    { fieldId: "c", value: "value", basis: "invented" }
+  ]), [
+    { fieldId: "a", value: "yes", basis: "chosen" },
+    { fieldId: "b", value: "no", basis: "inferred" },
+    { fieldId: "c", value: "value", basis: "supported" }
+  ]);
+});
+
+test("removes basis metadata accidentally appended to answer text", () => {
+  assert.deepEqual(uniqueSuggestions([
+    { fieldId: "a", value: "Datadog experience (Supported)", basis: "supported" },
+    { fieldId: "b", value: "Likely no (inferred)", basis: "inferred" }
+  ]), [
+    { fieldId: "a", value: "Datadog experience", basis: "supported" },
+    { fieldId: "b", value: "Likely no", basis: "inferred" }
   ]);
 });

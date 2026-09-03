@@ -14,7 +14,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-async function handleGenerate({ page, fields, formContext = "", includeProfile = true, includeSupportingFiles = true, answeringPosture }) {
+async function handleGenerate({ page, fields, recordContext = [], actions = [], formContext = "", includeProfile = true, includeSupportingFiles = true, answeringPosture, assumeAffirmative = false, allowAssumptions = false, includeConsequentialAssumptions = false }) {
   const { profile = "", supportingDocuments = [], provider = "", apiKeys = {}, model = "" } = await chrome.storage.local.get([
     "profile", "supportingDocuments", "provider", "apiKeys", "model"
   ]);
@@ -22,7 +22,7 @@ async function handleGenerate({ page, fields, formContext = "", includeProfile =
   const selectedSupportingDocuments = includeSupportingFiles ? enabledSupportingDocuments(supportingDocuments) : [];
   const selectedContext = String(formContext || "").trim();
   if (!selectedProfile && !selectedSupportingDocuments.length && !selectedContext) throw new Error("Include your saved profile or supporting files, or add context for this form.");
-  const prompt = buildPrompt({ profile: selectedProfile, supportingDocuments: selectedSupportingDocuments, formContext: selectedContext, answeringPosture, page, fields });
+  const prompt = buildPrompt({ profile: selectedProfile, supportingDocuments: selectedSupportingDocuments, formContext: selectedContext, answeringPosture, assumeAffirmative, allowAssumptions, includeConsequentialAssumptions, page, fields, recordContext, actions });
   const text = await generateSuggestions({ provider, apiKey: apiKeys[provider] || "", model, prompt });
-  return parseFormAnalysis(text, fields);
+  return parseFormAnalysis(text, fields, actions);
 }
