@@ -1,5 +1,6 @@
 import { buildPrompt, parseFormAnalysis } from "./prompt.js";
 import { generateSuggestions } from "./providers.js";
+import { enabledSupportingDocuments } from "./supporting-documents.js";
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type !== "GENERATE_SUGGESTIONS") return false;
@@ -13,14 +14,15 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   return true;
 });
 
-async function handleGenerate({ page, fields, formContext = "", includeProfile = true }) {
-  const { profile = "", provider = "", apiKeys = {}, model = "" } = await chrome.storage.local.get([
-    "profile", "provider", "apiKeys", "model"
+async function handleGenerate({ page, fields, formContext = "", includeProfile = true, includeSupportingFiles = true, answeringPosture }) {
+  const { profile = "", supportingDocuments = [], provider = "", apiKeys = {}, model = "" } = await chrome.storage.local.get([
+    "profile", "supportingDocuments", "provider", "apiKeys", "model"
   ]);
   const selectedProfile = includeProfile ? profile.trim() : "";
+  const selectedSupportingDocuments = includeSupportingFiles ? enabledSupportingDocuments(supportingDocuments) : [];
   const selectedContext = String(formContext || "").trim();
-  if (!selectedProfile && !selectedContext) throw new Error("Include your saved profile or add context for this form.");
-  const prompt = buildPrompt({ profile: selectedProfile, formContext: selectedContext, page, fields });
+  if (!selectedProfile && !selectedSupportingDocuments.length && !selectedContext) throw new Error("Include your saved profile or supporting files, or add context for this form.");
+  const prompt = buildPrompt({ profile: selectedProfile, supportingDocuments: selectedSupportingDocuments, formContext: selectedContext, answeringPosture, page, fields });
   const text = await generateSuggestions({ provider, apiKey: apiKeys[provider] || "", model, prompt });
   return parseFormAnalysis(text, fields);
 }

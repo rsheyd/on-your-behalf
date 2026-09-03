@@ -36,6 +36,17 @@
           <input id="include-profile" type="checkbox" checked>
           Include saved profile
         </label>
+        <label class="profile-toggle supporting-toggle" for="include-supporting-files">
+          <input id="include-supporting-files" type="checkbox" checked>
+          <span>Include supporting files <small id="supporting-files-count"></small></span>
+        </label>
+        <label class="posture-label" for="answering-posture">Answering posture</label>
+        <select id="answering-posture">
+          <option value="strongest_truthful_case">Strongest truthful case</option>
+          <option value="exact_experience_only">Exact experience only</option>
+          <option value="leave_uncertain_open">Leave uncertain answers open</option>
+        </select>
+        <p id="posture-note" class="context-note">Emphasizes relevant and transferable experience, but never authorizes unsupported claims.</p>
         <p class="provider-note">Enabled information and scanned field details are sent to your configured AI provider.</p>
       </section>
       <button id="fill" class="primary" type="button">Scan and fill this page</button>

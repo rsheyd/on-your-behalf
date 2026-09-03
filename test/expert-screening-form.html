@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Expert screening fixture</title>
+  </head>
+  <body>
+    <main>
+      <h1>Agent Runtime Environment Solutions Expert Screening</h1>
+      <p>Our client is looking to speak with specialists in agent runtime environment solutions, product strategy, pricing, discounting, and go-to-market execution.</p>
+      <form id="screening-form">
+        <section><p>Have you been directly involved with cloud-based agent runtime or execution environment solutions? Specify the platforms and describe your expertise, experience, and responsibilities.</p><div><textarea name="q_internal_1_text"></textarea></div></section>
+        <section><p>Are you able to discuss detailed features of agent runtime environments, agent lifecycle management, and third-party integrations for a named cloud sandbox product?</p><div><textarea name="q_internal_2_text"></textarea></div></section>
+        <section><p>Can you provide insights into enterprise pricing models and discounting strategies for that product, including differences in capabilities, usage limits, or deployment options?</p><div><textarea name="q_internal_3_text"></textarea></div></section>
+        <section><p>Are you familiar with its go-to-market approach, sales motions, and key customer decision-making factors?</p><div><textarea name="q_internal_4_text"></textarea></div></section>
+        <section>
+          <p>Do you consent to this call being recorded, transcribed, or summarized?</p>
+          <div><label><input type="radio" name="recordingConsent" value="yes"> Yes</label><label><input type="radio" name="recordingConsent" value="no"> No</label></div>
+        </section>
+        <div>Select your Time Zone: <select name="timezone"><option value="">--- Please Select ---</option><option value="eastern">United States: Eastern</option><option value="pacific">United States: Pacific</option></select></div>
+        <fieldset>
+          <legend>Do you accept or decline this consultation?</legend>
+          <label><input type="radio" name="consultationDecision" value="accept"> Accept</label>
+          <label><input type="radio" name="consultationDecision" value="decline"> Decline</label>
+        </fieldset>
+        <button id="submit" type="submit">Submit screening</button>
+      </form>
+      <p id="submission-status" role="status">Submission attempts: 0</p>
+    </main>
+    <script>
+      let submissionAttempts = 0;
+      document.querySelector("#screening-form").addEventListener("submit", event => {
+        event.preventDefault();
+        submissionAttempts += 1;
+        document.querySelector("#submission-status").textContent = `Submission attempts: ${submissionAttempts}`;
+      });
+    </script>
+  </body>
+</html>

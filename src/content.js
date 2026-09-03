@@ -1,11 +1,16 @@
 (function initializeOpenFormFiller() {
-  if (globalThis.__openFormFillerLoaded) return;
-  globalThis.__openFormFillerLoaded = true;
+  const CONTENT_VERSION = "0.6.0";
+  if (globalThis.__openFormFillerLoaded === CONTENT_VERSION) return;
+  if (globalThis.__openFormFillerMessageListener) {
+    chrome.runtime.onMessage.removeListener(globalThis.__openFormFillerMessageListener);
+  }
+  globalThis.__openFormFillerLoaded = CONTENT_VERSION;
 
   const FIELD_ATTRIBUTE = "data-open-form-filler-id";
   const HIGHLIGHT_CLASS = "open-form-filler-filled";
   const STYLE_ID = "open-form-filler-style";
   const formState = globalThis.OpenFormFillerState;
+  const fieldLabels = globalThis.OpenFormFillerLabels;
   const logicalFieldIds = new Map();
   let counter = 0;
 
@@ -20,14 +25,39 @@
     return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0 && rect.height > 0;
   }
 
-  function nearbyLabel(element) {
+  function directLabelCandidates(element) {
     const ariaLabelledBy = element.getAttribute("aria-labelledby");
     const ariaText = ariaLabelledBy?.split(/\s+/).map(id => document.getElementById(id)?.textContent).filter(Boolean).join(" ");
     const explicit = element.id ? document.querySelector(`label[for="${CSS.escape(element.id)}"]`)?.textContent : "";
     const wrapping = element.closest("label")?.textContent;
     const legend = element.closest("fieldset")?.querySelector("legend")?.textContent;
-    const parentText = element.parentElement?.textContent;
-    return text(element.getAttribute("aria-label") || ariaText || explicit || wrapping || legend || parentText || element.placeholder || element.name, 300);
+    return [element.getAttribute("aria-label"), ariaText, explicit, wrapping, legend];
+  }
+
+  function optionLabel(element) {
+    return text(directLabelCandidates(element).find(Boolean) || element.parentElement?.textContent || element.value, 150);
+  }
+
+  function contextualCandidates(element) {
+    const candidates = [];
+    let ancestor = element.parentElement;
+    for (let depth = 0; ancestor && depth < 6 && ![document.body, document.documentElement].includes(ancestor); depth += 1, ancestor = ancestor.parentElement) {
+      const clone = ancestor.cloneNode(true);
+      clone.querySelectorAll("input, textarea, select, button, option, script, style, noscript, template, [role='option'], [hidden], [aria-hidden='true'], .hidden")
+        .forEach(node => node.remove());
+      candidates.push(clone.textContent);
+    }
+    return candidates;
+  }
+
+  function nearbyLabel(element, optionLabels = []) {
+    return fieldLabels.chooseFieldLabel({
+      primaryCandidates: directLabelCandidates(element),
+      ancestorCandidates: contextualCandidates(element),
+      optionLabels,
+      fallback: element.placeholder || element.name,
+      maxLength: 500
+    });
   }
 
   function describedText(element) {
@@ -125,14 +155,15 @@
       if (!isVisible(element) || element.disabled || element.readOnly) continue;
       const type = (element.type || "").toLowerCase();
       if (["hidden", "submit", "reset", "button", "image", "file"].includes(type)) continue;
-      const label = nearbyLabel(element);
-      if (sensitive(element, label)) continue;
 
       if (type === "radio") {
-        const groupName = element.name || label;
+        const groupName = element.name || nearbyLabel(element);
         if (seenRadioGroups.has(groupName)) continue;
         seenRadioGroups.add(groupName);
         const radios = [...scanRoot.querySelectorAll('input[type="radio"]')].filter(radio => (radio.name || nearbyLabel(radio)) === groupName && isVisible(radio) && !radio.disabled);
+        const optionLabels = radios.map(optionLabel);
+        const label = nearbyLabel(element, optionLabels);
+        if (sensitive(element, label)) continue;
         const logicalKey = formState.logicalFieldKey({ domId: "", name: element.name || groupName, kind: "radio", label });
         const fieldId = ensureId(element, logicalKey);
         radios.forEach(radio => radio.setAttribute(FIELD_ATTRIBUTE, fieldId));
@@ -144,10 +175,13 @@
           name: element.name || "",
           required: radios.some(radio => radio.required),
           empty: elementIsEmpty(element, radios),
-          options: radios.map(radio => ({ value: radio.value, label: nearbyLabel(radio) || radio.value }))
+          options: radios.map((radio, index) => ({ value: radio.value, label: optionLabels[index] || radio.value }))
         });
         continue;
       }
+
+      const label = nearbyLabel(element);
+      if (sensitive(element, label)) continue;
 
       const kind = type === "checkbox" ? "checkbox"
         : element instanceof HTMLSelectElement ? "select"
@@ -342,7 +376,7 @@
     return { filled, filledIds, failed, skipped, mutated, scan: latestScan };
   }
 
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  const messageListener = (message, _sender, sendResponse) => {
     if (message?.type === "SCAN_FORM") {
       sendResponse({ ok: true, ...scan() });
       return false;
@@ -352,5 +386,7 @@
       return true;
     }
     return false;
-  });
+  };
+  globalThis.__openFormFillerMessageListener = messageListener;
+  chrome.runtime.onMessage.addListener(messageListener);
 })();

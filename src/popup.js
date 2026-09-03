@@ -1,4 +1,6 @@
 import "./form-state.js";
+import "./field-label.js";
+import { enabledSupportingDocuments } from "./supporting-documents.js";
 
 const formState = globalThis.OpenFormFillerState;
 const MAX_FILL_ROUNDS = 6;
@@ -15,9 +17,19 @@ const toggleContextButton = document.querySelector("#toggle-context");
 const formContextPanel = document.querySelector("#form-context-panel");
 const formContextInput = document.querySelector("#form-context");
 const includeProfileInput = document.querySelector("#include-profile");
+const includeSupportingFilesInput = document.querySelector("#include-supporting-files");
+const supportingFilesCount = document.querySelector("#supporting-files-count");
+const answeringPostureInput = document.querySelector("#answering-posture");
+const postureNote = document.querySelector("#posture-note");
 const rememberContextInput = document.querySelector("#remember-context");
 const clearContextButton = document.querySelector("#clear-context");
 const FORM_CONTEXT_SESSION_KEY = "formContextDraft";
+const DEFAULT_ANSWERING_POSTURE = "strongest_truthful_case";
+const POSTURE_NOTES = {
+  strongest_truthful_case: "Emphasizes relevant and transferable experience, but never authorizes unsupported claims.",
+  exact_experience_only: "Answers only when your supplied information directly supports the exact experience requested.",
+  leave_uncertain_open: "Fills clear facts and leaves adjacent or ambiguous answers for you."
+};
 let contextSaveTimer = null;
 
 settingsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
@@ -35,6 +47,15 @@ clearContextButton.addEventListener("click", async () => {
   await chrome.storage.session.remove(FORM_CONTEXT_SESSION_KEY);
   formContextInput.focus();
 });
+answeringPostureInput.addEventListener("change", async () => {
+  const answeringPosture = POSTURE_NOTES[answeringPostureInput.value] ? answeringPostureInput.value : DEFAULT_ANSWERING_POSTURE;
+  answeringPostureInput.value = answeringPosture;
+  renderPostureNote();
+  await chrome.storage.local.set({ answeringPosture });
+});
+includeSupportingFilesInput.addEventListener("change", async () => {
+  await chrome.storage.local.set({ includeSupportingFiles: includeSupportingFilesInput.checked });
+});
 toggleContextButton.addEventListener("click", () => {
   const expanded = toggleContextButton.getAttribute("aria-expanded") === "true";
   toggleContextButton.setAttribute("aria-expanded", String(!expanded));
@@ -44,6 +65,8 @@ toggleContextButton.addEventListener("click", () => {
 });
 
 const sessionContextReady = restoreSessionContext();
+const answeringPostureReady = restoreAnsweringPosture();
+const supportingFilesReady = restoreSupportingFiles();
 
 let startedAt = 0;
 let elapsedTimer = null;
@@ -51,7 +74,7 @@ let waitingTimer = null;
 let currentStatus = "";
 
 async function runFill() {
-  await sessionContextReady;
+  await Promise.all([sessionContextReady, answeringPostureReady, supportingFilesReady]);
   if (rememberContextInput.checked) await persistRememberedContext();
   showUnresolved([]);
   beginProgress();
@@ -59,11 +82,15 @@ async function runFill() {
   try {
     const formContext = formContextInput.value.trim();
     const includeProfile = includeProfileInput.checked;
-    if (!includeProfile && !formContext) throw new Error("Include your saved profile or add context for this form.");
+    const includeSupportingFiles = includeSupportingFilesInput.checked;
+    const answeringPosture = answeringPostureInput.value;
+    if (!includeProfile && (!includeSupportingFiles || includeSupportingFilesInput.disabled) && !formContext) {
+      throw new Error("Include your saved profile or supporting files, or add context for this form.");
+    }
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error("Open a normal web page before filling.");
 
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["src/form-state.js", "src/content.js"] });
+    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["src/form-state.js", "src/field-label.js", "src/content.js"] });
     let currentScan = await chrome.tabs.sendMessage(tab.id, { type: "SCAN_FORM" });
     if (!currentScan?.ok) throw new Error(currentScan?.error || "Could not scan this page.");
     if (!currentScan.fields.length) throw new Error("No fillable, non-sensitive fields were found.");
@@ -116,7 +143,7 @@ async function runFill() {
       scheduleWaitingMessage(providerName, pending.length);
       const generated = await chrome.runtime.sendMessage({
         type: "GENERATE_SUGGESTIONS",
-        payload: { page: currentScan.page, fields: pending, formContext, includeProfile }
+        payload: { page: currentScan.page, fields: pending, formContext, includeProfile, includeSupportingFiles, answeringPosture }
       });
       if (!generated?.ok) throw new Error(generated?.error || "Could not generate suggestions.");
 
@@ -183,12 +210,30 @@ async function runFill() {
           : "";
     const message = totalFilled
       ? `Filled ${totalFilled} fields across ${completedRounds} ${completedRounds === 1 ? "round" : "rounds"}. Review the green-outlined answers before submitting.${failureSuffix}${limitSuffix}`
-      : `No fields could be filled from the current profile. Review the information needed below.${failureSuffix}${limitSuffix}`;
+      : `No fields could be filled from the enabled profile or form context. Review the information needed below.${failureSuffix}${limitSuffix}`;
     finishProgress(message);
     showUnresolved(unresolved);
   } catch (error) {
     finishProgress(error.message || "Something went wrong.", true);
   }
+}
+
+async function restoreSupportingFiles() {
+  const stored = await chrome.storage.local.get(["supportingDocuments", "includeSupportingFiles"]);
+  const count = enabledSupportingDocuments(stored.supportingDocuments).length;
+  includeSupportingFilesInput.disabled = count === 0;
+  includeSupportingFilesInput.checked = count > 0 && stored.includeSupportingFiles !== false;
+  supportingFilesCount.textContent = count ? `(${count} enabled)` : "(none added)";
+}
+
+async function restoreAnsweringPosture() {
+  const stored = await chrome.storage.local.get("answeringPosture");
+  answeringPostureInput.value = POSTURE_NOTES[stored.answeringPosture] ? stored.answeringPosture : DEFAULT_ANSWERING_POSTURE;
+  renderPostureNote();
+}
+
+function renderPostureNote() {
+  postureNote.textContent = POSTURE_NOTES[answeringPostureInput.value] || POSTURE_NOTES[DEFAULT_ANSWERING_POSTURE];
 }
 
 async function restoreSessionContext() {

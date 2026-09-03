@@ -1,5 +1,6 @@
 import { defaultModel, PROVIDERS, providerErrorMessage, testProviderConnection } from "./providers.js";
 import { importDocumentFile } from "./document-import.js";
+import { normalizeSupportingDocuments, validateSupportingDocuments } from "./supporting-documents.js";
 
 const form = document.querySelector("#settings-form");
 const profile = document.querySelector("#profile");
@@ -18,10 +19,15 @@ const resetModel = document.querySelector("#reset-model");
 const status = document.querySelector("#status");
 const documentFile = document.querySelector("#document-file");
 const importStatus = document.querySelector("#import-status");
+const supportingFilesInput = document.querySelector("#supporting-files");
+const supportingImportStatus = document.querySelector("#supporting-import-status");
+const supportingDocumentsList = document.querySelector("#supporting-documents");
+const noSupportingFiles = document.querySelector("#no-supporting-files");
 const startTemplate = document.querySelector("#start-template");
 let apiKeys = {};
 let previousProvider = "gemini";
 let models = {};
+let supportingDocuments = [];
 
 const STARTER_PROFILE = `# My OYB Profile
 
@@ -41,6 +47,7 @@ initialize();
 providerInputs.forEach(input => input.addEventListener("change", changeProvider));
 form.addEventListener("submit", save);
 documentFile.addEventListener("change", importDocument);
+supportingFilesInput.addEventListener("change", importSupportingFiles);
 startTemplate.addEventListener("click", insertStarterTemplate);
 toggleKey.addEventListener("click", toggleKeyVisibility);
 clearKey.addEventListener("click", clearProviderKey);
@@ -48,8 +55,10 @@ testConnectionButton.addEventListener("click", testConnection);
 resetModel.addEventListener("click", () => { model.value = defaultModel(selectedProvider()); });
 
 async function initialize() {
-  const saved = await chrome.storage.local.get(["profile", "provider", "model", "apiKeys"]);
+  const saved = await chrome.storage.local.get(["profile", "supportingDocuments", "provider", "model", "apiKeys"]);
   profile.value = saved.profile || "";
+  supportingDocuments = normalizeSupportingDocuments(saved.supportingDocuments);
+  renderSupportingDocuments();
   previousProvider = PROVIDERS[saved.provider] ? saved.provider : "gemini";
   providerInputs.find(input => input.value === previousProvider).checked = true;
   apiKeys = saved.apiKeys || {};
@@ -157,12 +166,81 @@ async function importDocument() {
   }
 }
 
+async function importSupportingFiles() {
+  const files = [...supportingFilesInput.files];
+  if (!files.length) return;
+  supportingFilesInput.disabled = true;
+  supportingImportStatus.classList.remove("error");
+  supportingImportStatus.textContent = `Reading ${files.length} ${files.length === 1 ? "file" : "files"}…`;
+  try {
+    const imported = await Promise.all(files.map(async file => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      type: file.name.toLowerCase().split(".").pop() || "",
+      importedAt: new Date().toISOString(),
+      enabled: true,
+      text: await importDocumentFile(file)
+    })));
+    supportingDocuments = validateSupportingDocuments([...supportingDocuments, ...imported]);
+    renderSupportingDocuments();
+    supportingImportStatus.textContent = `Added ${files.length} supporting ${files.length === 1 ? "file" : "files"}. Review the list, then click Save settings.`;
+  } catch (error) {
+    supportingImportStatus.classList.add("error");
+    supportingImportStatus.textContent = error instanceof Error ? error.message : "The supporting files could not be imported.";
+  } finally {
+    supportingFilesInput.disabled = false;
+    supportingFilesInput.value = "";
+  }
+}
+
+function renderSupportingDocuments() {
+  supportingDocumentsList.replaceChildren();
+  noSupportingFiles.hidden = supportingDocuments.length > 0;
+
+  for (const supportingDocument of supportingDocuments) {
+    const item = document.createElement("li");
+    item.className = "supporting-document";
+    const toggleLabel = document.createElement("label");
+    const toggle = document.createElement("input");
+    toggle.type = "checkbox";
+    toggle.checked = supportingDocument.enabled;
+    toggle.addEventListener("change", () => {
+      supportingDocument.enabled = toggle.checked;
+      supportingImportStatus.classList.remove("error");
+      supportingImportStatus.textContent = "Supporting-file selection changed. Click Save settings to keep it.";
+    });
+    const details = document.createElement("span");
+    const name = document.createElement("span");
+    name.className = "supporting-document-name";
+    name.textContent = supportingDocument.name;
+    const meta = document.createElement("small");
+    meta.className = "supporting-document-meta";
+    meta.textContent = `${supportingDocument.type.toUpperCase() || "DOCUMENT"} · ${supportingDocument.text.length.toLocaleString()} characters`;
+    details.append(name, meta);
+    toggleLabel.append(toggle, details);
+    const remove = document.createElement("button");
+    remove.className = "supporting-remove";
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.setAttribute("aria-label", `Remove ${supportingDocument.name}`);
+    remove.addEventListener("click", () => {
+      supportingDocuments = supportingDocuments.filter(candidate => candidate.id !== supportingDocument.id);
+      renderSupportingDocuments();
+      supportingImportStatus.classList.remove("error");
+      supportingImportStatus.textContent = "Supporting file removed. Click Save settings to make this permanent.";
+    });
+    item.append(toggleLabel, remove);
+    supportingDocumentsList.append(item);
+  }
+}
+
 async function save(event) {
   event.preventDefault();
   rememberCurrentProvider();
   const provider = selectedProvider();
   await chrome.storage.local.set({
     profile: profile.value.trim(),
+    supportingDocuments: validateSupportingDocuments(supportingDocuments),
     provider,
     model: models[provider],
     apiKeys

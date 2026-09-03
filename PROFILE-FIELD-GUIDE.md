@@ -18,6 +18,7 @@ You can rename, reorder, combine, or delete sections. You can also ignore the ou
   - [Employment history](#employment-history)
   - [Education](#education)
   - [Skills and qualifications](#skills-and-qualifications)
+  - [Detailed professional experience](#detailed-professional-experience)
   - [Links and online profiles](#links-and-online-profiles)
   - [Reusable descriptions](#reusable-descriptions)
   - [Preferences](#preferences)
@@ -138,6 +139,18 @@ Delete this guide and the divider below before importing. The content after the 
 - Licenses and certifications, including expiration dates when relevant:
 - Languages and proficiency levels:
 - Other qualifications:
+
+## Detailed professional experience
+
+Use this optional section when forms ask whether you can discuss a specialized product or market. Distinguish direct experience from related knowledge so OYB can present the strongest truthful answer without implying work you did not do.
+
+- Products, platforms, or systems I personally used or built:
+- What I did with them and in what capacity:
+- Approximate dates, duration, and whether the work was production, professional, experimental, or personal:
+- Related technologies and transferable experience:
+- Product strategy, pricing, discounting, purchasing, sales, or go-to-market responsibilities I actually held:
+- Topics I know through adjacent experience rather than firsthand work:
+- Important limitations OYB should state rather than overclaim:
 
 ## Links and online profiles
 

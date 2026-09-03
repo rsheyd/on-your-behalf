@@ -12,6 +12,8 @@ button { font: inherit; cursor: pointer; }
 #form-context-panel { margin-top: 14px; }
 #form-context-panel > label { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 650; }
 #form-context { box-sizing: border-box; width: 100%; min-height: 190px; resize: vertical; border: 1px solid #b9bcb5; border-radius: 8px; padding: 11px; background: #fff; color: inherit; font: inherit; }
+.posture-label { display: block; margin-top: 14px; margin-bottom: 6px; font-size: 14px; font-weight: 650; }
+#answering-posture { box-sizing: border-box; width: 100%; border: 1px solid #b9bcb5; border-radius: 8px; padding: 9px 10px; background: #fff; color: inherit; font: inherit; }
 .context-note, .provider-note { font-size: 13px; }
 .context-note { margin-top: 4px; }
 .context-session-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
@@ -19,6 +21,8 @@ button { font: inherit; cursor: pointer; }
 .context-session-toggle input, .profile-toggle input { width: 18px; height: 18px; margin: 0; }
 .context-session-row .text-button { font-size: 14px; }
 .profile-toggle { display: flex; align-items: center; gap: 9px; margin-top: 14px; font-size: 15px; }
+.supporting-toggle { margin-top: 9px; }
+.supporting-toggle small { color: #777a73; font-size: 12px; font-weight: 400; }
 .provider-note { margin-top: 7px; }
 .primary { width: 100%; border: 0; border-radius: 9px; padding: 13px 16px; background: #167755; color: white; font-weight: 650; }
 .primary:hover { background: #116344; }
@@ -42,7 +46,7 @@ button { font: inherit; cursor: pointer; }
 @media (prefers-color-scheme: dark) {
   body { background: #20221f; color: #f5f5f2; }
   p { color: #b7bab3; }
-  .context-controls, #form-context { border-color: #464942; background: #292c28; }
+  .context-controls, #form-context, #answering-posture { border-color: #464942; background: #292c28; }
   .unresolved { border-color: #464942; }
   .unresolved ul { color: #d8dad4; }
 }

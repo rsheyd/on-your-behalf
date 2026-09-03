@@ -34,6 +34,18 @@
           </div>
           <span id="import-status" class="import-status" role="status" aria-live="polite"></span>
           <textarea id="profile" rows="15" placeholder="My name is…&#10;I live in…&#10;My professional background is…"></textarea>
+          <div class="supporting-section">
+            <h2>Supporting files</h2>
+            <p class="help">Add reference documents without merging them into your editable profile. Enabled files may be sent to your selected AI provider when filling forms.</p>
+            <label class="profile-tool supporting-file-button" for="supporting-files">
+              <span>Add supporting files</span>
+              <small>Select up to 10 DOCX, Markdown, text, or text-based PDF files</small>
+              <input id="supporting-files" class="visually-hidden" type="file" multiple accept=".pdf,.docx,.md,.markdown,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain">
+            </label>
+            <span id="supporting-import-status" class="import-status" role="status" aria-live="polite"></span>
+            <p id="no-supporting-files" class="empty-supporting">No supporting files added.</p>
+            <ul id="supporting-documents" class="supporting-documents"></ul>
+          </div>
         </section>
         <section>
           <label>AI provider</label>

@@ -21,6 +21,17 @@ textarea { resize: vertical; }
 .import-status { display: block; margin: 0 0 10px; color: #167755; font-size: 13px; }
 .import-status:empty { display: none; }
 .import-status.error { color: #a12d25; }
+.supporting-section { margin-top: 20px; padding-top: 18px; border-top: 1px solid #e1e2dd; }
+.supporting-section h2 { margin: 0 0 4px; font-size: 20px; }
+.supporting-file-button { width: min(100%, 260px); min-height: 64px; margin: 12px 0 10px; }
+.empty-supporting { font-size: 13px; }
+.supporting-documents { display: grid; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+.supporting-document { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; border: 1px solid #d9dad5; border-radius: 9px; padding: 11px 12px; }
+.supporting-document label { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 10px; margin: 0; min-width: 0; }
+.supporting-document input { width: 18px; height: 18px; margin: 0; padding: 0; }
+.supporting-document-name { display: block; overflow-wrap: anywhere; font-size: 14px; }
+.supporting-document-meta { display: block; color: #656860; font-size: 11px; font-weight: 400; }
+.supporting-remove { border: 1px solid #c5c7c0; padding: 6px 9px; background: transparent; color: #8b2922; font-size: 12px; }
 .provider-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 12px 0 18px; }
 .provider-choice { position: relative; display: flex; min-width: 0; min-height: 88px; flex-direction: column; gap: 4px; margin: 0; border: 1px solid #c5c7c0; border-radius: 9px; padding: 12px 12px 12px 38px; cursor: pointer; }
 .provider-choice:hover { border-color: #167755; background: #f6faf8; }
@@ -64,7 +75,10 @@ button { border: 0; border-radius: 8px; padding: 10px 15px; background: #167755;
   .provider-choice:hover, .provider-choice:has(input:checked) { border-color: #7fd6b5; background: #252a26; }
   .provider-choice strong { background: #204d3c; color: #b8efd9; }
   .provider-choice small, .connection-actions span { color: #b8bbb3; }
-  .provider-setup, details { border-color: #42453f; }
+  .provider-setup, details, .supporting-section { border-color: #42453f; }
+  .supporting-document { border-color: #555950; }
+  .supporting-document-meta { color: #b8bbb3; }
+  .supporting-remove { border-color: #555950; color: #f0a29b; }
   .key-link, .text-button { color: #7fd6b5; }
   .compact-button, .secondary-action { border-color: #555950; background: #20221f; color: #f5f5f2; }
   .danger-button { color: #f0a29b; }

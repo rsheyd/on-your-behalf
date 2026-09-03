@@ -25,17 +25,20 @@ Open a form, click the extension, choose which information to include, and selec
 - Accepts temporary context for a particular form or event and can fill without sending the saved profile.
 - Optionally remembers temporary context until Chrome closes, with an immediate clear action.
 - Imports editable profile text locally from DOCX, Markdown, plain text, and text-based PDF documents.
+- Keeps optional supporting files separate from the editable profile, with per-file enablement and a per-fill inclusion control.
 - Supports Google Gemini, OpenAI, and Anthropic with your own API key.
 - Provides provider-specific key setup links, connection testing, and plain-language setup errors.
 - Fills text inputs, textareas, checkboxes, radio groups, native selects, and common ARIA comboboxes.
 - Rescans and continues through bounded rounds when choices reveal, remove, or change dependent fields.
 - Reports profile facts that are missing and questions that require the user's judgment.
+- Offers a per-fill answering posture, including a strongest-truthful-case mode that emphasizes relevant and transferable experience without authorizing unsupported claims.
 - Handles React-style controlled text fields using native value setters and browser events.
 - Skips password, payment-card, and authentication-code fields individually.
 - Never submits a form or clicks a next/continue button.
 - Stores the profile, provider choice, model, and provider-specific API keys in Chrome extension-local storage.
 - Has no backend, account, analytics, or telemetry.
 - Uses `activeTab`: it can inspect a page only after you click the extension's fill action.
+- Includes a dedicated high-contrast toolbar icon designed to remain recognizable at Chrome's smallest extension-icon size.
 
 ## Screenshots
 
@@ -63,7 +66,7 @@ Provider settings guide users through getting, testing, and safely storing their
 8. Open a web form, click the extension, optionally add context for that form, choose whether to include the saved profile, and select **Scan and fill this page**.
 9. Review every green-outlined answer before submitting the form yourself.
 
-In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. [`PROFILE-TEMPLATE.md`](PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported text stays editable, may be sent to your selected AI provider when filling forms, and is not saved until you choose **Save settings**.
+In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. You can also add up to 10 supporting files that remain separate from the editable profile; enable or disable each file in Settings and choose whether to include the enabled set for each fill. [`PROFILE-TEMPLATE.md`](PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported profile text and supporting files may be sent to your selected AI provider and are not saved until you choose **Save settings**.
 
 After filling, the popup lists factual answers missing from your profile and questions that require a decision. Use **Open profile settings** to add durable facts; judgment calls remain for the current form.
 
@@ -78,13 +81,16 @@ The extension has no server of its own. Your profile and provider-specific API k
 The extension sends the selected provider:
 
 - Your text profile when **Include saved profile** is enabled.
+- The enabled supporting files when **Include supporting files** is enabled.
 - Temporary form-specific context when you provide it.
 - The page origin/path, title, and primary heading. URL query parameters and fragments are removed.
 - Labels and metadata for the detected non-sensitive form fields.
 
 It does not intentionally send current field values. Page text is treated as untrusted input in the AI prompt, and returned suggestions are restricted to field identifiers created during the current scan. Conditional forms may require several provider requests, each limited to newly discovered or meaningfully changed empty fields. These controls reduce prompt-injection risk but cannot eliminate it. Review suggestions before submitting sensitive or consequential forms.
 
-Saved profiles and API keys use durable `chrome.storage.local`. Optional temporary-context retention uses `chrome.storage.session`, is not merged into the profile, and is intended to clear with the browser session.
+The selected model may use its general knowledge to interpret terminology and relationships between technologies, but OYB instructs it to treat only your enabled profile and form context as evidence of your personal experience. Answering posture changes how supported experience is presented; it never authorizes invented product use, pricing or sales responsibility, or other unsupported claims. Consent, acceptance, attestations, and comparable decisions remain for you.
+
+Saved profiles, supporting-file text, and API keys use durable `chrome.storage.local`. Optional temporary-context retention uses `chrome.storage.session`, is not merged into the profile, and is intended to clear with the browser session.
 
 Choosing **Test connection** sends the selected provider a small request asking it to reply with `OK`. The test does not include your profile or information from a web form, but it may use a small amount of API quota.
 
@@ -108,11 +114,12 @@ Completed onboarding direction and the remaining profile, portability, and first
 - `manifest.json` — Manifest V3 extension configuration and version.
 - `src/background.js` — AI request orchestration.
 - `src/content.js` — page scanning and filling.
-- `src/form-core.js`, `src/form-state.js`, `src/prompt.js`, `src/providers.js`, and `src/document-import.js` — standalone form, scan-state, prompt, parsing, provider, and document-import logic.
+- `src/form-core.js`, `src/form-state.js`, `src/prompt.js`, `src/providers.js`, `src/document-import.js`, and `src/supporting-documents.js` — standalone form, scan-state, prompt, parsing, provider, document-import, and supporting-file logic.
 - `src/vendor/` — browser-ready PDF.js distribution with its license.
 - `src/popup.*` — compact scan-and-fill action.
 - `src/options.*` — profile and provider settings.
 - `docs/images/` — screenshots used in this README.
+- `icons/` — extension icon sizes and the high-resolution generated source artwork.
 - `docs/design/` — implementation-ready feature designs.
 - `docs/roadmap/` — longer-term product direction and ideas.
 - `test/*.test.js` — unit tests for standalone logic.

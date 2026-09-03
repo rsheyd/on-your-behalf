@@ -9,8 +9,9 @@ For contribution expectations and the safety invariants that every change must p
 1. Edit files in `src/` or `manifest.json`.
 2. Run `npm test` and `npm run check`.
 3. Open `chrome://extensions` and reload **On Your Behalf**.
-4. Serve this repository over HTTP and open `test/manual-form.html` or `test/conditional-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
-5. Exercise the popup action and inspect the extension service worker for provider or messaging errors.
+4. Refresh any already-open target page so it cannot retain code from an older extension version.
+5. Serve this repository over HTTP and open `test/manual-form.html` or `test/conditional-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
+6. Exercise the popup action and inspect the extension service worker for provider or messaging errors.
 
 For example:
 
@@ -25,6 +26,9 @@ Then open `http://localhost:8765/test/manual-form.html`.
 Test at least:
 
 - A page containing text inputs and textareas.
+- An unlabeled textarea whose visible question appears only in a nearby container, as in `test/expert-screening-form.html`.
+- A radio group whose individual option labels are not mistaken for the surrounding question.
+- A native select whose option list is not included in its extracted field label.
 - Native selects, radio groups, and checkboxes.
 - The ARIA combobox in `test/manual-form.html`.
 - The custom comboboxes and replaced dependent subtree in `test/conditional-form.html`.
@@ -43,6 +47,8 @@ Test at least:
 - File import from DOCX, Markdown, plain text, and a text-based PDF.
 - A scanned PDF produces an unsupported-format message instead of changing the profile.
 - Importing over a non-empty profile asks for confirmation and does not save automatically.
+- Adding several supporting files keeps them separate from the editable profile, and enable, disable, and remove changes do not become permanent until settings are saved.
+- The popup accurately reports the number of enabled supporting files and can exclude them from a fill request.
 - Switching providers preserves the current provider's entered or saved key and model choice.
 - Saved keys are masked; newly entered keys can be shown, hidden, and cleared.
 - Each supported provider connects successfully with a real API key.

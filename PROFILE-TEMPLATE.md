@@ -31,6 +31,8 @@ Current role, relevant work history, education, qualifications, availability, an
 
 Skills, tools, languages, licenses, certifications, website, LinkedIn, portfolio, GitHub, and other relevant profiles:
 
+For specialized professional forms, note which products or systems I used directly, what I did with them, related transferable experience, any commercial responsibilities I actually held, and limitations OYB should not overstate:
+
 
 ## Reusable descriptions
 
