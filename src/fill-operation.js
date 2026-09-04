@@ -2,7 +2,7 @@ function fieldMap(fields) {
   return new Map((fields || []).filter(field => field?.fieldId).map(field => [field.fieldId, field]));
 }
 
-export function coherentFieldBatches(fields, maxFields = 25) {
+export function coherentFieldBatches(fields, maxFields = 25, { wholeRepeatedCollections = false } = {}) {
   const limit = Math.max(1, Number(maxFields) || 25);
   const units = [];
   const unitByKey = new Map();
@@ -10,7 +10,7 @@ export function coherentFieldBatches(fields, maxFields = 25) {
     if (!field?.fieldId) continue;
     const section = String(field.sectionId || "page");
     const repeated = field.groupId && Number(field.entryOrdinal) > 0;
-    const key = repeated ? `${section}:${field.groupId}:${field.entryOrdinal}` : `${section}:field:${field.fieldId}`;
+    const key = repeated ? `${section}:${field.groupId}${wholeRepeatedCollections ? "" : `:${field.entryOrdinal}`}` : `${section}:field:${field.fieldId}`;
     let unit = unitByKey.get(key);
     if (!unit) {
       unit = { section, fields: [] };
@@ -36,8 +36,8 @@ export function coherentFieldBatches(fields, maxFields = 25) {
   return batches;
 }
 
-export function adaptiveAiCallAllowance(fields, maxFields = 25, followUpCalls = 2) {
-  return Math.max(1, coherentFieldBatches(fields, maxFields).length) + Math.max(0, Number(followUpCalls) || 0);
+export function adaptiveAiCallAllowance(fields, maxFields = 25, followUpCalls = 2, batchOptions = {}) {
+  return Math.max(1, coherentFieldBatches(fields, maxFields, batchOptions).length) + Math.max(0, Number(followUpCalls) || 0);
 }
 
 export function fillLimitReason({ pendingCount = 0, actionCount = 0, queuedCount = 0, elapsedMs = 0, maxDurationMs, domPasses = 0, maxDomPasses, aiCalls = 0, maxAiCalls, progressCount = 0, hasAppliedPass = false } = {}) {
@@ -131,4 +131,14 @@ export function transitionOperationState(state = {}, event = {}) {
   if (event.type === "complete" && state.status === "running") return { ...state, status: "complete", progress: 1 };
   if (event.type === "fail" && state.status === "running") return { ...state, status: "failed", error: String(event.error || "Fill failed") };
   return state;
+}
+
+export function sameFillOptions(left = {}, right = {}) {
+  const keys = ["formContext", "includeProfile", "includeSupportingFiles", "answeringPosture", "assumeAffirmative", "allowAssumptions", "includeConsequentialAssumptions", "selectedSectionId", "replaceExisting"];
+  return keys.every(key => (left[key] ?? defaultOptionValue(key)) === (right[key] ?? defaultOptionValue(key)));
+}
+
+function defaultOptionValue(key) {
+  if (key === "includeProfile" || key === "includeSupportingFiles") return true;
+  return key === "formContext" || key === "answeringPosture" || key === "selectedSectionId" ? "" : false;
 }

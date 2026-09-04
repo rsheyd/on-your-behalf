@@ -1,7 +1,9 @@
 import { enabledSupportingDocuments } from "./supporting-documents.js";
 import { availableSections } from "./form-scope.js";
+import { sameFillOptions } from "./fill-operation.js";
 
 const fillButton = document.querySelector("#fill");
+const cancelFillButton = document.querySelector("#cancel-fill");
 const settingsButton = document.querySelector("#settings");
 const status = document.querySelector("#status");
 const progress = document.querySelector("#progress");
@@ -27,6 +29,10 @@ const includeConsequentialAssumptionsInput = document.querySelector("#include-co
 const buildInfo = document.querySelector("#build-info");
 const rememberContextInput = document.querySelector("#remember-context");
 const clearContextButton = document.querySelector("#clear-context");
+const historyCount = document.querySelector("#history-count");
+const copyDiagnosticsButton = document.querySelector("#copy-diagnostics");
+const clearDiagnosticsButton = document.querySelector("#clear-diagnostics");
+const diagnosticsStatus = document.querySelector("#diagnostics-status");
 const FORM_CONTEXT_SESSION_KEY = "formContextDraft";
 const DEFAULT_ANSWERING_POSTURE = "strongest_truthful_case";
 const POSTURE_NOTES = {
@@ -39,11 +45,14 @@ let targetTabId = null;
 let operationTimer = null;
 let currentOperation = null;
 
-buildInfo.textContent = `OYB ${chrome.runtime.getManifest().version} · updated Sep 4, 2026 at 9:46 AM ET`;
+showBuildFingerprint();
 
 settingsButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
 editProfileButton.addEventListener("click", () => chrome.runtime.openOptionsPage());
 fillButton.addEventListener("click", runFill);
+cancelFillButton.addEventListener("click", cancelFill);
+copyDiagnosticsButton.addEventListener("click", copyLastRun);
+clearDiagnosticsButton.addEventListener("click", clearRunHistory);
 formContextInput.addEventListener("input", scheduleContextSave);
 rememberContextInput.addEventListener("change", async () => {
   clearTimeout(contextSaveTimer);
@@ -73,6 +82,8 @@ allowAssumptionsInput.addEventListener("change", async () => {
 includeConsequentialAssumptionsInput.addEventListener("change", () => chrome.storage.local.set({ includeConsequentialAssumptions: includeConsequentialAssumptionsInput.checked }));
 sectionScopeInput.addEventListener("change", renderFillButtonLabel);
 replaceExistingInput.addEventListener("change", renderFillButtonLabel);
+[includeProfileInput, includeSupportingFilesInput, answeringPostureInput, assumeAffirmativeInput, allowAssumptionsInput, includeConsequentialAssumptionsInput].forEach(input => input.addEventListener("change", renderFillButtonLabel));
+formContextInput.addEventListener("input", renderFillButtonLabel);
 toggleContextButton.addEventListener("click", () => {
   const expanded = toggleContextButton.getAttribute("aria-expanded") === "true";
   toggleContextButton.setAttribute("aria-expanded", String(!expanded));
@@ -87,6 +98,7 @@ const supportingFilesReady = restoreSupportingFiles();
 const answerOptionsReady = restoreAnswerOptions();
 const sectionScopeReady = restoreSectionScopes();
 const fillOperationReady = restoreFillOperation();
+const runHistoryReady = restoreRunHistory();
 
 async function runFill() {
   await Promise.all([sessionContextReady, answeringPostureReady, supportingFilesReady, answerOptionsReady, sectionScopeReady, fillOperationReady]);
@@ -105,13 +117,14 @@ async function runFill() {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab?.id || !/^https?:/.test(tab.url || "")) throw new Error("Open a normal web page before filling.");
     targetTabId = tab.id;
+    const requestedOptions = { formContext, includeProfile, includeSupportingFiles, answeringPosture, assumeAffirmative, allowAssumptions, includeConsequentialAssumptions, selectedSectionId, replaceExisting };
     const current = await chrome.runtime.sendMessage({ type: "GET_FILL_OPERATION", tabId: tab.id });
     let response;
-    if (current?.operation?.status === "paused") {
+    if (current?.operation?.status === "paused" && sameFillOptions(current.operation.options, requestedOptions)) {
       response = await chrome.runtime.sendMessage({ type: "CONTINUE_FILL", tabId: tab.id });
     } else {
       if (!includeProfile && (!includeSupportingFiles || includeSupportingFilesInput.disabled) && !formContext) throw new Error("Include your saved profile or supporting files, or add context for this form.");
-      response = await chrome.runtime.sendMessage({ type: "START_FILL", payload: { tabId: tab.id, pageUrl: tab.url, options: { formContext, includeProfile, includeSupportingFiles, answeringPosture, assumeAffirmative, allowAssumptions, includeConsequentialAssumptions, selectedSectionId, replaceExisting } } });
+      response = await chrome.runtime.sendMessage({ type: "START_FILL", payload: { tabId: tab.id, pageUrl: tab.url, options: requestedOptions } });
     }
     if (!response?.ok) throw new Error(response?.error || "Could not start filling this page.");
     renderOperation(response.operation);
@@ -150,14 +163,21 @@ function renderFillButtonLabel() {
     return;
   }
   if (currentOperation?.status === "paused") {
-    fillButton.textContent = "Continue previous fill";
-    return;
+    if (sameFillOptions(currentOperation.options, selectedFillOptions())) {
+      fillButton.textContent = "Continue previous fill";
+      return;
+    }
   }
   if (replaceExistingInput.checked) {
     fillButton.textContent = sectionScopeInput.value ? "Review and replace this section" : "Review and replace this page";
   } else {
     fillButton.textContent = sectionScopeInput.value ? "Scan and fill this section" : "Scan and fill this page";
   }
+}
+
+function selectedFillOptions() {
+  const allowAssumptions = allowAssumptionsInput.checked;
+  return { formContext: formContextInput.value.trim(), includeProfile: includeProfileInput.checked, includeSupportingFiles: includeSupportingFilesInput.checked, answeringPosture: answeringPostureInput.value, assumeAffirmative: assumeAffirmativeInput.checked, allowAssumptions, includeConsequentialAssumptions: allowAssumptions && includeConsequentialAssumptionsInput.checked, selectedSectionId: sectionScopeInput.value, replaceExisting: replaceExistingInput.checked };
 }
 
 async function restoreSupportingFiles() {
@@ -230,10 +250,66 @@ function renderOperation(operation) {
   progress.hidden = !operation || operation.status === "failed";
   progress.dataset.stage = running ? operation.stage : operation?.status === "complete" ? "done" : "";
   fillButton.disabled = running;
+  cancelFillButton.hidden = !running;
+  if (operation?.options) {
+    replaceExistingInput.checked = operation.options.replaceExisting === true;
+    if ([...sectionScopeInput.options].some(option => option.value === operation.options.selectedSectionId)) sectionScopeInput.value = operation.options.selectedSectionId;
+  }
   status.classList.toggle("error", operation?.isError === true || operation?.status === "failed");
   status.textContent = operation ? `${operation.message} (${elapsed.toFixed(1)}s)` : "Nothing is submitted automatically.";
   showUnresolved(Array.isArray(operation?.unresolved) ? operation.unresolved : []);
   renderFillButtonLabel();
+}
+
+async function cancelFill() {
+  if (!targetTabId) return;
+  cancelFillButton.disabled = true;
+  try {
+    const response = await chrome.runtime.sendMessage({ type: "CANCEL_FILL", tabId: targetTabId });
+    if (!response?.ok) throw new Error(response?.error || "Could not cancel this fill.");
+    renderOperation(response.operation);
+    await restoreRunHistory();
+  } catch (error) {
+    diagnosticsStatus.textContent = error.message || "Could not cancel this fill.";
+  } finally {
+    cancelFillButton.disabled = false;
+  }
+}
+
+async function restoreRunHistory() {
+  const response = await chrome.runtime.sendMessage({ type: "GET_RUN_HISTORY" });
+  const count = response?.history?.length || 0;
+  historyCount.textContent = count ? `${count} saved` : "None saved";
+  copyDiagnosticsButton.disabled = !count;
+  clearDiagnosticsButton.disabled = !count;
+  return response?.history || [];
+}
+
+async function copyLastRun() {
+  const history = await restoreRunHistory();
+  if (!history.length) return;
+  await navigator.clipboard.writeText(JSON.stringify(history[0], null, 2));
+  diagnosticsStatus.textContent = "Last run copied.";
+}
+
+async function clearRunHistory() {
+  await chrome.runtime.sendMessage({ type: "CLEAR_RUN_HISTORY" });
+  diagnosticsStatus.textContent = "Run history cleared.";
+  await restoreRunHistory();
+}
+
+async function showBuildFingerprint() {
+  const version = chrome.runtime.getManifest().version;
+  const paths = ["manifest.json", "src/background.js", "src/content.js", "src/fill-operation.js", "src/fill-runner.js", "src/form-state.js", "src/popup.html", "src/popup.css", "src/popup.js", "src/prompt.js"];
+  try {
+    const parts = await Promise.all(paths.map(async path => `${path}\n${await (await fetch(chrome.runtime.getURL(path))).text()}`));
+    const bytes = new TextEncoder().encode(parts.join("\n---OYB-FILE---\n"));
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const fingerprint = [...new Uint8Array(digest)].slice(0, 6).map(byte => byte.toString(16).padStart(2, "0")).join("");
+    buildInfo.textContent = `OYB ${version} · build ${fingerprint}`;
+  } catch {
+    buildInfo.textContent = `OYB ${version}`;
+  }
 }
 
 function startOperationPolling() {
@@ -250,6 +326,7 @@ async function refreshOperation() {
     if (response.operation.status !== "running") {
       clearInterval(operationTimer);
       operationTimer = null;
+      await restoreRunHistory();
     }
   } catch {
     clearInterval(operationTimer);

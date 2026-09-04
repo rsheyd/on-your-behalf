@@ -16,7 +16,9 @@ const {
   semanticFieldHint,
   stableFieldId,
   unansweredFields,
-  validSuggestionsForScan
+  validSuggestionsForScan,
+  validRepeatedGroupIds,
+  visualEntryOrdinal
 } = globalThis.OpenFormFillerState;
 
 test("maps hidden custom-select values to their visible labels", () => {
@@ -56,6 +58,17 @@ test("derives repeated entry ordinals and semantic hints from common field ident
   assert.equal(repeatedEntryOrdinal({ name: "company" }), 0);
   assert.equal(semanticFieldHint({ domId: "StartMonth_2" }), "start month");
   assert.equal(semanticFieldHint({ name: "employment[3][job_title]" }), "employment job title");
+});
+
+test("requires multiple roles to repeat before treating fields as a repeated collection", () => {
+  const employment = [1, 2].flatMap(entryOrdinal => ["company", "job title"].map(semanticHint => ({ groupId: "employment", entryOrdinal, semanticHint })));
+  const mixedExpertise = [1, 2, 3].map(entryOrdinal => ({ groupId: "expertise", entryOrdinal, semanticHint: "category" })).concat([{ groupId: "expertise", entryOrdinal: 1, semanticHint: "research interests" }]);
+  assert.deepEqual([...validRepeatedGroupIds([...employment, ...mixedExpertise])], ["employment"]);
+});
+
+test("normalizes gapped raw indexes into visual entry order", () => {
+  const maps = new Map();
+  assert.deepEqual([1, 2, 3, 6, 7, 6].map(raw => visualEntryOrdinal(raw, "employment", maps)), [1, 2, 3, 4, 5, 4]);
 });
 
 test("recognizes only non-navigating add-row actions", () => {

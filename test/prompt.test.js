@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildPrompt, normalizeAnsweringPosture, parseFormAnalysis } from "../src/prompt.js";
+import { buildPrompt, normalizeAnsweringPosture, parseCollectionPlan, parseFormAnalysis } from "../src/prompt.js";
 
 test("prompt labels page content as untrusted and includes the profile", () => {
   const prompt = buildPrompt({
@@ -115,7 +115,24 @@ test("prompt keeps repeated fields in the primary answerable list with lightweig
   assert.match(prompt, /not yet represented/i);
   assert.match(prompt, /ADD-ROW DECISION/);
   assert.match(prompt, /including when FIELDS TO ANSWER is empty/i);
-  assert.match(prompt, /shared parent values do not collapse distinct labeled or dated sub-entries/i);
+  assert.match(prompt, /multiple roles under one employer are separate records/i);
+});
+
+test("replacement prompts do not expose old repeated values as evidence", () => {
+  const prompt = buildPrompt({ profile: "Correct source", replaceExisting: true, page: {}, fields: [{ fieldId: "company-1", groupId: "jobs", groupLabel: "Jobs", entryOrdinal: 1, semanticHint: "company", currentValue: "Wrong employer" }] });
+  assert.doesNotMatch(prompt, /Wrong employer/);
+  assert.match(prompt, /values already on the page are placeholders/i);
+});
+
+test("collection plans retain ordered records and only known valid roles", () => {
+  const fields = [
+    { fieldId: "company", semanticHint: "company", kind: "input" },
+    { fieldId: "current", semanticHint: "current", kind: "checkbox" }
+  ];
+  assert.deepEqual(parseCollectionPlan('{"records":[{"company":"First","current":true,"unknown":"x"},{"company":"Second","current":"yes"}]}', fields), {
+    records: [{ company: "First", current: true }, { company: "Second" }],
+    invalid: [{ fieldId: "2:current", value: "yes", reason: "invalid_value" }]
+  });
 });
 
 test("accepts only scanned add-row actions and caps the response at one", () => {
@@ -146,6 +163,17 @@ test("recovers JSON surrounded by prose", () => {
   ]), {
     suggestions: [{ fieldId: "one", value: true, basis: "supported" }],
     unresolved: []
+  });
+});
+
+test("rejects type-invalid choice values without classifying them as missing", () => {
+  assert.deepEqual(parseFormAnalysis(JSON.stringify({ suggestions: [{ fieldId: "current", value: "9" }, { fieldId: "month", value: false }], unresolved: [] }), [
+    { fieldId: "current", kind: "checkbox", label: "Currently employed" },
+    { fieldId: "month", kind: "select", label: "Start month", options: [{ value: "05", label: "May" }] }
+  ]), {
+    suggestions: [],
+    unresolved: [],
+    invalid: [{ fieldId: "current", reason: "invalid_value" }, { fieldId: "month", reason: "invalid_value" }]
   });
 });
 

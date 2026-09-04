@@ -44,6 +44,16 @@ export function uniqueSuggestions(items) {
   return result;
 }
 
+export function suggestionMatchesField(suggestion, field) {
+  if (!suggestion || !field) return false;
+  if (field.kind === "checkbox") return typeof suggestion.value === "boolean" || /^(?:true|false)$/i.test(String(suggestion.value));
+  if (field.kind === "select" || field.kind === "radio" || field.kind === "custom-select") {
+    const target = String(suggestion.value).trim().toLowerCase();
+    return (field.options || []).some(option => String(option?.value ?? option).trim().toLowerCase() === target || String(option?.label ?? option).trim().toLowerCase() === target);
+  }
+  return true;
+}
+
 export function trimText(value, maxLength = 500) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
   return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;

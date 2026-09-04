@@ -44,6 +44,19 @@
 - Limited individual provider requests to 25 seconds so a slow response pauses at a resumable checkpoint before Chrome's service-worker fetch cutoff.
 - Extracted the production fill loop from Chrome APIs so dynamic replacement and row expansion can be integration-tested headlessly, including an opt-in private OpenAI comparison.
 - Extended the adaptive AI allowance when a repeated row is successfully added, allowing additional source records to continue while retaining progress and DOM safety limits.
+- Added a Cancel current fill action that aborts provider work and stops before another page mutation while preserving changes already made.
+- Added a browser-local, ten-run diagnostic history with captured run settings, compact scan and AI transitions, Copy last run, and Clear history controls.
+- Restored the captured replacement and section settings while displaying a reopened run so its button and controls describe the operation that actually ran.
+- Prevented the main fill action from silently resuming a paused run with stale settings; changing replacement, scope, context, or answering options now starts a new run.
+- Replaced the hard-coded popup update timestamp with a runtime-generated fingerprint of the packaged extension source.
+- Normalized gapped repeated-control indexes into visual row order so dynamic forms retain coherent source-record assignments.
+- Rejected type-invalid checkbox and choice suggestions and kept those fields eligible for a bounded AI correction attempt.
+- Added one bounded confirmation for an unchanged action-only decision so a single missed add-row response does not prematurely end repeated-record expansion.
+- Made replacement of repeated sections derive one ordered source-backed collection plan, then reuse it deterministically across field changes and row additions instead of reinterpreting existing values on every AI call.
+- Added bounded collection-plan and rejected-value details to copied run diagnostics so missing repeated-record values can be distinguished from validation failures.
+- Added nearby shared instructions such as keyword and delimiter guidance to each governed field's format context.
+- Tightened repeated-section detection so a mixed section is planned as a collection only when multiple field roles actually repeat across rows.
+- Added a persistent toolbar badge and tooltip showing when OYB is running, finished, paused, or needs attention even while its popup is closed.
 
 ## 0.4.0
 

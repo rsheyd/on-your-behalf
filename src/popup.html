@@ -70,6 +70,7 @@
         <p class="provider-note">Enabled information and scanned field details are sent to your configured AI provider.</p>
       </section>
       <button id="fill" class="primary" type="button">Scan and fill this page</button>
+      <button id="cancel-fill" class="secondary cancel" type="button" hidden>Cancel current fill</button>
       <div id="progress" class="progress" hidden aria-hidden="true">
         <div id="progress-bar" class="progress-bar"></div>
       </div>
@@ -78,6 +79,18 @@
         <h2 id="unresolved-title">Profile gaps</h2>
         <ul id="unresolved-list"></ul>
         <button id="edit-profile" class="secondary" type="button">Open profile settings</button>
+      </section>
+      <section class="diagnostics" aria-labelledby="diagnostics-title">
+        <div class="diagnostics-heading">
+          <h2 id="diagnostics-title">Run diagnostics</h2>
+          <span id="history-count"></span>
+        </div>
+        <p>Stored only in this browser. May include form answers and AI suggestions.</p>
+        <div class="diagnostics-actions">
+          <button id="copy-diagnostics" class="secondary" type="button">Copy last run</button>
+          <button id="clear-diagnostics" class="text-button" type="button">Clear history</button>
+        </div>
+        <p id="diagnostics-status" class="context-note" aria-live="polite"></p>
       </section>
       <p id="build-info" class="build-info"></p>
     </main>

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import "../src/field-label.js";
 
-const { chooseFieldLabel, meaningful, withoutOptions } = globalThis.OpenFormFillerLabels;
+const { chooseFieldLabel, chooseInstructionHint, meaningful, withoutOptions } = globalThis.OpenFormFillerLabels;
 
 test("uses nearby question context instead of an internal textarea name", () => {
   assert.equal(chooseFieldLabel({
@@ -27,4 +27,11 @@ test("select context does not need to contain its option list", () => {
 test("option-only text is not meaningful group context", () => {
   assert.equal(withoutOptions("I agree I do not agree", ["I agree", "I do not agree"]), "");
   assert.equal(meaningful("I agree I do not agree", ["I agree", "I do not agree"]), false);
+});
+
+test("extracts a shared formatting instruction without neighboring field labels", () => {
+  assert.equal(chooseInstructionHint([
+    "Research Interests",
+    "Please provide keywords across the categories below. Please use commas to separate items. Drugs & Technology Research Interests Board Certifications"
+  ]), "Please provide keywords across the categories below. Please use commas to separate items.");
 });

@@ -18,7 +18,7 @@
   "scripts": {
     "test": "node --test",
     "test:employment:live": "node scripts/employment-live-check.js",
-    "check": "node --check src/answer-policy.js && node --check src/background.js && node --check src/content.js && node --check src/field-label.js && node --check src/fill-operation.js && node --check src/fill-runner.js && node --check src/form-core.js && node --check src/form-scope.js && node --check src/form-state.js && node --check src/options.js && node --check src/popup.js && node --check src/prompt.js && node --check src/providers.js && node --check src/document-import.js && node --check src/supporting-documents.js && node --check scripts/employment-live-check.js"
+    "check": "node --check src/action-indicator.js && node --check src/answer-policy.js && node --check src/background.js && node --check src/content.js && node --check src/field-label.js && node --check src/fill-operation.js && node --check src/fill-runner.js && node --check src/form-core.js && node --check src/form-scope.js && node --check src/form-state.js && node --check src/options.js && node --check src/popup.js && node --check src/prompt.js && node --check src/providers.js && node --check src/run-history.js && node --check src/document-import.js && node --check src/supporting-documents.js && node --check scripts/employment-live-check.js"
   },
   "dependencies": {
     "pdfjs-dist": "^6.2.108"

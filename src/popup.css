@@ -49,12 +49,18 @@ button { font: inherit; cursor: pointer; }
 .unresolved li + li { margin-top: 5px; }
 .unresolved .reason { color: #777a73; font-size: 13px; }
 .secondary { width: 100%; border: 1px solid #b9bcb5; border-radius: 8px; padding: 8px 12px; background: transparent; color: inherit; }
+.cancel { margin-top: 9px; border-color: #a52a2a; color: #a52a2a; }
+.diagnostics { margin-top: 16px; padding-top: 14px; border-top: 1px solid #d9dad5; }
+.diagnostics-heading, .diagnostics-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.diagnostics-heading span, .diagnostics p { color: #777a73; font-size: 12px; }
+.diagnostics-actions { margin-top: 9px; }
+.diagnostics-actions .secondary { width: auto; flex: 1; }
 .build-info { margin-top: 18px; text-align: center; color: #85877f; font-size: 11px; }
 @media (prefers-color-scheme: dark) {
   body { background: #20221f; color: #f5f5f2; }
   p { color: #b7bab3; }
   .context-controls, #form-context, #answering-posture, .scope-row select { border-color: #464942; background: #292c28; }
-  .unresolved { border-color: #464942; }
+  .unresolved, .diagnostics { border-color: #464942; }
   .unresolved ul { color: #d8dad4; }
 }
 @media (prefers-reduced-motion: reduce) { .progress-bar { animation: none !important; transition: none; } }

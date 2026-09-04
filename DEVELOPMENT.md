@@ -9,7 +9,7 @@ For contribution expectations and the safety invariants that every change must p
 1. Edit files in `src/` or `manifest.json`.
 2. Run `npm test` and `npm run check`.
 3. Open `chrome://extensions` and reload **On Your Behalf**.
-4. Reopen the popup and confirm its version/source-update footer. The scanner revision replaces older injected OYB code on an already-open page; refreshing the target page remains a useful clean-state check.
+4. Reopen the popup and confirm its version and source-bundle fingerprint footer. The fingerprint changes when packaged runtime files change, without requiring a development version bump. The scanner revision replaces older injected OYB code on an already-open page; refreshing the target page remains a useful clean-state check.
 5. Serve this repository over HTTP and open `test/manual-form.html`, `test/conditional-form.html`, `test/employment-history-form.html`, or `test/long-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
 6. Exercise the popup action and inspect the extension service worker for provider or messaging errors.
 
@@ -24,6 +24,10 @@ python3 -m http.server 8765
 Then open `http://localhost:8765/test/manual-form.html`.
 
 The production fill loop can also be tested without Chrome or an unpacked extension. `npm test` runs it against an in-memory dynamic employment fixture. For the opt-in private provider comparison, run `npm run test:employment:live` with `OPENAI_VALERIA_API_KEY` available; it sends a bounded excerpt of `roman-only/linkedin-profile.md` to OpenAI and checks the exact resulting rows without printing the credential.
+
+For a browser-only failure, use **Copy last run** in the popup's Run diagnostics section. The newest ten traces stay in extension-local storage and include run settings, compact field/group snapshots, AI suggestions, applied or failed field IDs, row actions, and the stopping reason. They exclude API keys and full profile or supporting-document contents, but may contain form answers; clear the history when it is no longer needed.
+
+Repeated-section tests deliberately include non-contiguous raw control indexes and browser-like checkbox rescans. Application-generated numeric suffixes are treated as stable identity only; record positions follow visual row order.
 
 ## Manual smoke checks
 

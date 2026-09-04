@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { actionsForActiveExpansion, actionsForReplacementPhase, adaptiveAiCallAllowance, coherentFieldBatches, extendReplacementSnapshot, fillLimitReason, reconcileCheckpointForResume, reconcileSuggestionQueue, replacementPhaseComplete, snapshotAddedEntries, snapshotReplacement, transitionOperationState } from "../src/fill-operation.js";
+import { actionsForActiveExpansion, actionsForReplacementPhase, adaptiveAiCallAllowance, coherentFieldBatches, extendReplacementSnapshot, fillLimitReason, reconcileCheckpointForResume, reconcileSuggestionQueue, replacementPhaseComplete, sameFillOptions, snapshotAddedEntries, snapshotReplacement, transitionOperationState } from "../src/fill-operation.js";
 
 const repeatedField = (fieldId, entryOrdinal, role) => ({ fieldId, groupId: "employment", entryOrdinal, semanticHint: role });
 
@@ -92,6 +92,13 @@ test("resume reopens a completed field if the page was reset", () => {
   assert.deepEqual(resumed.filledIds, []);
 });
 
+test("paused fills resume only when visible settings still match", () => {
+  const captured = { includeProfile: true, includeSupportingFiles: true, answeringPosture: "strongest_truthful_case", selectedSectionId: "", replaceExisting: false };
+  assert.equal(sameFillOptions(captured, { ...captured }), true);
+  assert.equal(sameFillOptions(captured, { ...captured, replaceExisting: true }), false);
+  assert.equal(sameFillOptions(captured, { ...captured, selectedSectionId: "employment" }), false);
+});
+
 test("batches long forms by section without splitting repeated entries", () => {
   const fields = [
     ...Array.from({ length: 18 }, (_, index) => ({ fieldId: `personal-${index}`, sectionId: "personal" })),
@@ -108,6 +115,11 @@ test("batches long forms by section without splitting repeated entries", () => {
 test("keeps an oversized repeated entry intact", () => {
   const entry = Array.from({ length: 6 }, (_, index) => repeatedField(`entry-${index}`, 1, `role-${index}`));
   assert.deepEqual(coherentFieldBatches(entry, 4), [entry]);
+});
+
+test("keeps a whole repeated collection together for replacement", () => {
+  const collection = Array.from({ length: 5 }, (_, entry) => Array.from({ length: 7 }, (_, role) => ({ ...repeatedField(`entry-${entry}-${role}`, entry + 1, `role-${role}`), sectionId: "employment" }))).flat();
+  assert.deepEqual(coherentFieldBatches(collection, 20, { wholeRepeatedCollections: true }), [collection]);
 });
 
 test("progress-based limits distinguish completion, stalls, and bounded work", () => {

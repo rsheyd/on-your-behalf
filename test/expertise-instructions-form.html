@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><title>Expertise Instructions Fixture</title>
+  <style>body{font:16px sans-serif}label,select,textarea{display:block;margin:8px;width:320px;height:32px}.expertise-layout{display:flex;gap:40px}</style>
+</head>
+<body>
+  <main>
+    <h2>Expertise</h2>
+    <section class="expertise-layout">
+      <div class="categories">
+        <p>Please specify your area of expertise.</p>
+        <label>Sector <select id="Area_0"><option value="technology">Technology</option></select></label>
+        <label>Industry <select id="Area_1"><option value="software">Software</option></select></label>
+        <label>Business Type <select id="Area_2"><option value="consulting">Consulting Firm</option></select></label>
+      </div>
+      <div class="keywords">
+        <p>Please provide keywords across the provided categories below. Please use commas to separate items.</p>
+        <label>Research Interests <textarea name="ResearchInterests_0"></textarea></label>
+        <label>Company Experience <textarea name="CompanyExperience_0"></textarea></label>
+        <label>Product Experience <textarea name="ProductExperience_0"></textarea></label>
+      </div>
+    </section>
+    <a href="#" id="add-expertise">Add Another Area of Expertise</a>
+  </main>
+  <script>window.chrome={runtime:{onMessage:{addListener(listener){window.fixtureListener=listener},removeListener(){}}}};</script>
+  <script src="../src/form-state.js"></script>
+  <script src="../src/field-label.js"></script>
+  <script src="../src/content.js"></script>
+  <script>
+    window.fixtureListener({type:"SCAN_FORM"}, {}, result => {
+      const research = result.fields.find(field => field.name === "ResearchInterests_0");
+      document.body.dataset.keywordInstructionCaptured = String(research?.formatHint?.includes("use commas"));
+      document.body.dataset.repeatedGroupCount = String(new Set(result.fields.map(field => field.groupId).filter(Boolean)).size);
+    });
+  </script>
+</body>
+</html>

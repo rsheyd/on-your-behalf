@@ -22,6 +22,29 @@
     return match ? Number(match[1]) + 1 : 0;
   }
 
+  function visualEntryOrdinal(rawOrdinal, groupId, entryMaps) {
+    if (!rawOrdinal || !groupId || !(entryMaps instanceof Map)) return 0;
+    let entries = entryMaps.get(groupId);
+    if (!entries) {
+      entries = new Map();
+      entryMaps.set(groupId, entries);
+    }
+    if (!entries.has(rawOrdinal)) entries.set(rawOrdinal, entries.size + 1);
+    return entries.get(rawOrdinal);
+  }
+
+  function validRepeatedGroupIds(fields) {
+    const groups = new Map();
+    for (const field of fields || []) {
+      if (!field?.groupId || !Number(field.entryOrdinal) || !field.semanticHint) continue;
+      if (!groups.has(field.groupId)) groups.set(field.groupId, new Map());
+      const roles = groups.get(field.groupId);
+      if (!roles.has(field.semanticHint)) roles.set(field.semanticHint, new Set());
+      roles.get(field.semanticHint).add(Number(field.entryOrdinal));
+    }
+    return new Set([...groups].filter(([, roles]) => [...roles.values()].filter(ordinals => ordinals.size >= 2).length >= 2).map(([groupId]) => groupId));
+  }
+
   function semanticFieldHint(field) {
     return String(field?.domId || field?.name || field?.label || "")
       .replace(/\[(?:\d+)\]/g, " ")
@@ -203,6 +226,8 @@
     semanticFieldHint,
     stableFieldId,
     unansweredFields,
-    validSuggestionsForScan
+    validSuggestionsForScan,
+    validRepeatedGroupIds,
+    visualEntryOrdinal
   });
 })(globalThis);

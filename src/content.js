@@ -1,5 +1,5 @@
 (function initializeOpenFormFiller() {
-  const CONTENT_REVISION = "0.6.0-20260903.1720";
+  const CONTENT_REVISION = "0.6.0-20260904.shared-instructions";
   if (globalThis.__openFormFillerLoaded === CONTENT_REVISION) return;
   if (globalThis.__openFormFillerMessageListener) {
     chrome.runtime.onMessage.removeListener(globalThis.__openFormFillerMessageListener);
@@ -92,6 +92,10 @@
       .map(id => document.getElementById(id)?.textContent)
       .filter(Boolean)
       .join(" "), 300);
+  }
+
+  function instructionHint(element) {
+    return fieldLabels.chooseInstructionHint(contextualCandidates(element), 400);
   }
 
   function sectionHeadings(scanRoot) {
@@ -232,6 +236,7 @@
     const seenRadioGroups = new Set();
     const identityOccurrences = new Map();
     const repeatParents = new Map();
+    const indexedEntryMaps = new Map();
     const fields = [];
 
     function repeatMetadata(element, label, section, groupElements = [element]) {
@@ -248,7 +253,7 @@
       return {
         groupId,
         groupLabel: section.sectionLabel || "Repeated entries",
-        entryOrdinal: indexedOrdinal || structural.ordinal,
+        entryOrdinal: indexedOrdinal ? formState.visualEntryOrdinal(indexedOrdinal, groupId, indexedEntryMaps) : structural.ordinal,
         semanticHint: semanticHint(element, label),
         currentValue: currentValue(element, groupElements)
       };
@@ -280,6 +285,7 @@
           name: element.name || "",
           required: radios.some(radio => radio.required),
           empty: elementIsEmpty(element, radios),
+          currentValue: currentValue(element, radios),
           ...section,
           ...repeatMetadata(element, label, section, radios),
           options: radios.map((radio, index) => ({ value: radio.value, label: optionLabels[index] || radio.value }))
@@ -314,16 +320,27 @@
         formatHint: text([
           element.getAttribute("title"),
           element.getAttribute("pattern"),
-          describedText(element)
+          describedText(element),
+          instructionHint(element)
         ].filter(Boolean).join(" · "), 400),
         min: element.getAttribute("min") || "",
         max: element.getAttribute("max") || "",
         required: Boolean(element.required || element.getAttribute("aria-required") === "true"),
         empty: elementIsEmpty(element),
+        currentValue: currentValue(element),
         ...section,
         ...repeatMetadata(element, label, section),
         options: optionList(element)
       });
+    }
+
+    const validRepeatedGroups = formState.validRepeatedGroupIds(fields);
+    for (const field of fields) {
+      if (!field.groupId || validRepeatedGroups.has(field.groupId)) continue;
+      delete field.groupId;
+      delete field.groupLabel;
+      delete field.entryOrdinal;
+      delete field.semanticHint;
     }
 
     const actionCandidates = [...scanRoot.querySelectorAll('button, input[type="button"], a, [role="button"]')];
