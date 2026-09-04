@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { providerErrorMessage, testProviderConnection } from "../src/providers.js";
+import { generateSuggestions, providerErrorMessage, testProviderConnection } from "../src/providers.js";
 
 test("connection checks send a minimal request for each provider", async () => {
   for (const provider of ["gemini", "openai", "anthropic"]) {
@@ -32,4 +32,20 @@ test("provider errors are translated into useful setup guidance", () => {
   assert.match(providerErrorMessage(Object.assign(new Error("model not found"), { status: 404 }), "anthropic"), /model is not available/);
   assert.match(providerErrorMessage(Object.assign(new Error("Too many requests"), { status: 429 }), "openai"), /rate-limiting/);
   assert.match(providerErrorMessage(new TypeError("Failed to fetch"), "gemini"), /could not reach/);
+});
+
+test("suggestion requests pass cancellation to the provider fetch", async () => {
+  const controller = new AbortController();
+  let signal;
+  await generateSuggestions({
+    provider: "openai",
+    apiKey: "secret-key",
+    prompt: "Return JSON",
+    signal: controller.signal,
+    request: async (_url, options) => {
+      signal = options.signal;
+      return { ok: true, status: 200, text: async () => JSON.stringify({ output_text: "{}" }) };
+    }
+  });
+  assert.equal(signal, controller.signal);
 });

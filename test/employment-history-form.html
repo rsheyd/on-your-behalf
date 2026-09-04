@@ -18,14 +18,17 @@
 </head>
 <body>
   <h1>Advisor Profile Fixture</h1>
-  <section class="section">
+  <form class="section">
     <h2>Employment History</h2>
     <label>Years of Sector Experience
       <select id="SectorExperience" name="SectorExperience"><option value="">Select</option><option>1-5</option><option>6-10</option><option>11-15</option><option>16-20</option><option>20+</option></select>
     </label>
     <div id="employment-rows"></div>
     <a id="add-employment" href="JavaScript:void(0);"><span>➕</span> <span>Add Another Company</span></a>
-  </section>
+    <button id="save" type="button">Save</button>
+    <button id="continue" type="button">Continue</button>
+    <button id="submit" type="submit">Submit</button>
+  </form>
   <h2>Fixture state</h2>
   <div id="fixture-state"></div>
   <script>
@@ -34,9 +37,20 @@
     const initialRows = [
       { company: "Wrong Current Co.", title: "Old Current Title", current: true, startMonth: "01", startYear: "2024" },
       { company: "Wrong Past Co.", title: "Old Past Title", current: true, startMonth: "02", startYear: "2020" },
-      { company: "", title: "", current: false, startMonth: "", startYear: "", endMonth: "", endYear: "" }
+      { company: "Legacy Systems LLC", title: "Systems Specialist", current: false, startMonth: "03", startYear: "2019", endMonth: "04", endYear: "2022" },
+      { company: "Example Networks", title: "Network Engineer", current: false, startMonth: "07", startYear: "2016", endMonth: "12", endYear: "2018" }
     ];
+    const fixtureDelayMs = Math.max(0, Math.min(120000, Number(new URLSearchParams(location.search).get("delayMs")) || 0));
     let addCount = 0;
+    let mutationCount = 0;
+    let submitAttempts = 0;
+    let navigationAttempts = 0;
+    const events = [];
+
+    function afterFixtureDelay(callback) {
+      if (fixtureDelayMs) setTimeout(callback, fixtureDelayMs);
+      else callback();
+    }
 
     function select(id, name, values, value, disabled = false) {
       const element = document.createElement("select");
@@ -69,8 +83,12 @@
       end.className = "date-pair";
       end.append(select(`EndMonth_${index}`, `EndMonth_${index}`, months, values.endMonth, current.checked), select(`EndYear_${index}`, `EndYear_${index}`, years, values.endYear, current.checked));
       current.addEventListener("change", () => {
-        end.querySelectorAll("select").forEach(control => { control.disabled = current.checked; if (current.checked) control.value = ""; });
-        renderState();
+        afterFixtureDelay(() => {
+          end.querySelectorAll("select").forEach(control => { control.disabled = current.checked; if (current.checked) control.value = ""; });
+          mutationCount += 1;
+          events.push({ type: "current-employment-change", entry: index + 1, current: current.checked });
+          renderState();
+        });
       });
       row.append(labelled(index === 0 ? "* Employer" : "Employer", company), labelled(index === 0 ? "* Job Title" : "Job Title", title), labelled("Currently Employed", current), labelled(index === 0 ? "* Start Date" : "Start Date", start), labelled("End Date", end));
       document.querySelector("#employment-rows").append(row);
@@ -87,11 +105,13 @@
         start: `${row.querySelector(`[id="StartMonth_${index}"]`).value}/${row.querySelector(`[id="StartYear_${index}"]`).value}`,
         end: `${row.querySelector(`[id="EndMonth_${index}"]`).value}/${row.querySelector(`[id="EndYear_${index}"]`).value}`
       }));
-      document.querySelector("#fixture-state").textContent = JSON.stringify({ addCount, rows }, null, 2);
+      document.querySelector("#fixture-state").textContent = JSON.stringify({ fixtureDelayMs, addCount, mutationCount, submitAttempts, navigationAttempts, events, rows }, null, 2);
     }
 
     initialRows.forEach(addRow);
-    document.querySelector("#add-employment").addEventListener("click", () => { addCount += 1; addRow(); });
+    document.querySelector("#add-employment").addEventListener("click", () => afterFixtureDelay(() => { addCount += 1; events.push({ type: "add-employment", entry: document.querySelectorAll(".employment-row").length + 1 }); addRow(); }));
+    document.querySelector("form").addEventListener("submit", event => { event.preventDefault(); submitAttempts += 1; events.push({ type: "submit-attempt" }); renderState(); });
+    for (const id of ["save", "continue"]) document.querySelector(`#${id}`).addEventListener("click", () => { navigationAttempts += 1; events.push({ type: `${id}-attempt` }); renderState(); });
   </script>
 </body>
 </html>

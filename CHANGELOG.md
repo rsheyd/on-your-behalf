@@ -33,6 +33,17 @@
 - Made repeated-record filling deterministic around controls that reveal or hide related date fields.
 - Prevented field-revealing checkbox changes from scrambling the remaining values in a repeated record.
 - Clarified indexed field labels and made the add-row decision explicit after the model has seen existing repeated records.
+- Made replacement runs finish their original repeated entries before offering Add another, while preserving unused AI suggestions across dependent-field rescans.
+- Made row expansion add and settle one new repeated entry at a time, with explicit action-only decisions and complete-record duplicate checks.
+- Moved fill execution into the extension service worker so closing the popup or switching tabs no longer owns or cancels the operation.
+- Added session checkpoints, restored active and completed status, and a configuration-free Continue previous fill action after an interruption or safety limit.
+- Added section-aware 25-field batching that keeps repeated records together and scales the AI-call allowance to the form instead of using one universal round limit.
+- Separated AI-call and DOM-pass limits, added provider-request cancellation, prompt zero-progress stopping, and a five-minute emergency ceiling with resumable checkpoints.
+- Raised the page-scan safety cap now that long forms are sent to the AI in bounded batches rather than as one request.
+- Kept the service worker alive only while a fill is active so popup closure and tab switching do not interrupt later AI calls or row additions.
+- Limited individual provider requests to 25 seconds so a slow response pauses at a resumable checkpoint before Chrome's service-worker fetch cutoff.
+- Extracted the production fill loop from Chrome APIs so dynamic replacement and row expansion can be integration-tested headlessly, including an opt-in private OpenAI comparison.
+- Extended the adaptive AI allowance when a repeated row is successfully added, allowing additional source records to continue while retaining progress and DOM safety limits.
 
 ## 0.4.0
 

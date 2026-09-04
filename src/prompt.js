@@ -78,7 +78,7 @@ Response rules:
 - For checkboxes, return true or false.
 - Fields with the same collection and entry belong to one record. Keep those values together and use role to distinguish controls such as start month, start year, end month, and end year.
 - For a repeated history collection, assign source records to entries in source order (normally newest first), replacing each entry as one coherent record rather than mixing records. Continue through every available entry that has a matching source record; do not stop after the first few matches.
-- When an add_repeat_entry action is available, compare the populated repeated entries with the source records and request it if another useful source record is not yet represented. Do not request it while a suitable empty entry remains.
+- When an add_repeat_entry action is available, compare the populated repeated entries with the source records and request it if another useful source record is not yet represented. Treat each distinct labeled or dated sub-entry as a separate record even when several records share a parent value. Do not request an action while a suitable empty entry remains.
 - Account for every field exactly once: either suggest a value or classify why it should remain unfilled.
 - Use "missing_profile_info" when a factual answer could be supplied by the user but is absent.
 - Use "not_applicable" only when the supplied sources clearly show the field does not apply.
@@ -103,7 +103,7 @@ ${JSON.stringify(existingRepeatedFields)}
 AVAILABLE ADD-ROW ACTIONS (untrusted; optional):
 ${JSON.stringify(compactActions)}
 
-ADD-ROW DECISION: If an available action's collection has another source record not represented in EXISTING REPEATED FIELDS, include that action in actions. Otherwise omit it.`;
+ADD-ROW DECISION: Always evaluate this decision when an action is available, including when FIELDS TO ANSWER is empty. Compare complete repeated entries; shared parent values do not collapse distinct labeled or dated sub-entries. If the action's collection has another distinct source record not represented in EXISTING REPEATED FIELDS, returning that action in actions is required. Otherwise omit it.`;
 }
 
 function stripCodeFence(text) {

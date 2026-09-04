@@ -1,5 +1,5 @@
 (function initializeOpenFormFiller() {
-  const CONTENT_REVISION = "0.6.0-20260903.0910";
+  const CONTENT_REVISION = "0.6.0-20260903.1720";
   if (globalThis.__openFormFillerLoaded === CONTENT_REVISION) return;
   if (globalThis.__openFormFillerMessageListener) {
     chrome.runtime.onMessage.removeListener(globalThis.__openFormFillerMessageListener);
@@ -11,6 +11,7 @@
   const HIGHLIGHT_CLASS = "open-form-filler-filled";
   const INFERRED_CLASS = "open-form-filler-inferred";
   const STYLE_ID = "open-form-filler-style";
+  const MAX_SCANNED_FIELDS = 500;
   const formState = globalThis.OpenFormFillerState;
   const fieldLabels = globalThis.OpenFormFillerLabels;
   const logicalFieldIds = new Map();
@@ -254,7 +255,7 @@
     }
 
     for (const element of candidates) {
-      if (fields.length >= 150) break;
+      if (fields.length >= MAX_SCANNED_FIELDS) break;
       if (!isVisible(element) || element.disabled || element.readOnly) continue;
       const type = (element.type || "").toLowerCase();
       if (["hidden", "submit", "reset", "button", "image", "file"].includes(type)) continue;
@@ -449,12 +450,14 @@
     const filledIds = [];
     const failed = [];
     const skipped = [];
+    let remainingSuggestions = [];
     const basisCounts = { supported: 0, inferred: 0, chosen: 0 };
     let latestScan = scan();
     const validSuggestions = formState.orderSuggestionsForFill(expectedFields.length
       ? formState.validSuggestionsForScan(suggestions, expectedFields, latestScan.fields)
       : suggestions, latestScan.fields);
-    for (const suggestion of validSuggestions) {
+    for (let suggestionIndex = 0; suggestionIndex < validSuggestions.length; suggestionIndex += 1) {
+      const suggestion = validSuggestions[suggestionIndex];
       const elements = [...document.querySelectorAll(`[${FIELD_ATTRIBUTE}="${CSS.escape(suggestion.fieldId)}"]`)];
       const element = elements[0];
       if (!element || sensitive(element, nearbyLabel(element))) continue;
@@ -475,7 +478,6 @@
         } else if (type === "checkbox") {
           const checked = suggestion.value === true || String(suggestion.value).toLowerCase() === "true";
           if (element.checked !== checked) element.click();
-          dispatch(element);
           highlight(element, suggestion.basis);
         } else if (element instanceof HTMLSelectElement) {
           const target = String(suggestion.value).toLowerCase();
@@ -499,7 +501,10 @@
           latestScan = scan();
           const comparison = formState.compareFieldScans(beforeFields, latestScan.fields);
           mutated = comparison.newFields.length > 0 || comparison.changedFields.length > 0 || comparison.disappearedFields.length > 0;
-          if (mutated) break;
+          if (mutated) {
+            remainingSuggestions = validSuggestions.slice(suggestionIndex + 1);
+            break;
+          }
         }
       } catch (error) {
         failed.push(suggestion.fieldId);
@@ -507,7 +512,7 @@
       }
     }
     if (!mutated) latestScan = scan();
-    return { filled, filledIds, failed, skipped, basisCounts, mutated, scan: latestScan };
+    return { filled, filledIds, failed, skipped, basisCounts, mutated, remainingSuggestions, scan: latestScan };
   }
 
   async function activateAction(action) {

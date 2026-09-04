@@ -10,8 +10,10 @@ For contribution expectations and the safety invariants that every change must p
 2. Run `npm test` and `npm run check`.
 3. Open `chrome://extensions` and reload **On Your Behalf**.
 4. Reopen the popup and confirm its version/source-update footer. The scanner revision replaces older injected OYB code on an already-open page; refreshing the target page remains a useful clean-state check.
-5. Serve this repository over HTTP and open `test/manual-form.html`, `test/conditional-form.html`, or `test/employment-history-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
+5. Serve this repository over HTTP and open `test/manual-form.html`, `test/conditional-form.html`, `test/employment-history-form.html`, or `test/long-form.html` in Chrome. Extension content scripts cannot run on `file://` pages unless the user separately enables file access.
 6. Exercise the popup action and inspect the extension service worker for provider or messaging errors.
+
+Background fills use a bounded keep-alive only while an operation is active, following Chrome's [service-worker migration guidance](https://developer.chrome.com/docs/extensions/develop/migrate/to-service-workers#keep-sw-alive). Provider calls stop after 25 seconds so OYB can save a resumable checkpoint before Chrome's 30-second fetch-response limit.
 
 For example:
 
@@ -20,6 +22,8 @@ python3 -m http.server 8765
 ```
 
 Then open `http://localhost:8765/test/manual-form.html`.
+
+The production fill loop can also be tested without Chrome or an unpacked extension. `npm test` runs it against an in-memory dynamic employment fixture. For the opt-in private provider comparison, run `npm run test:employment:live` with `OPENAI_VALERIA_API_KEY` available; it sends a bounded excerpt of `roman-only/linkedin-profile.md` to OpenAI and checks the exact resulting rows without printing the credential.
 
 ## Manual smoke checks
 
@@ -33,10 +37,13 @@ Test at least:
 - A styled checkbox whose real input is hidden but whose associated label remains visible.
 - Opening the popup lists populated semantic or visually marked form sections without contacting the AI provider.
 - Selecting a section limits every conditional fill round to that section while Entire page preserves the original behavior.
-- Replacement mode includes existing values only within the selected scope, updates each field once, and resets when the popup closes.
+- Replacement mode includes existing values only within the selected scope and updates each field once.
 - Repeated rows remain coherent across employer/title/date-style fields, existing blank rows are used first, and a recognized in-scope Add another control creates at most one row per round when the model requests it.
 - Add another controls remain detectable when a zero-size link or button wrapper contains visibly rendered children.
-- Closing and reopening the popup preserves its final status and unresolved list; starting another fill clears that stored result.
+- Closing the popup or switching tabs does not cancel a fill; reopening on the target page restores active, paused, or completed status.
+- A paused fill resumes from its saved checkpoint without regenerating completed fields or requiring additional configuration.
+- `test/long-form.html` fills in section-aware batches, keeps each repeated project entry together, and may use more AI calls than a short form without exceeding its adaptive allowance.
+- A stalled pass stops promptly, while reaching an AI-call, DOM-pass, provider-request, or overall-time limit preserves the remaining work for continuation.
 - The ARIA combobox in `test/manual-form.html`.
 - The custom comboboxes and replaced dependent subtree in `test/conditional-form.html`.
 - Both conditional activity branches, including switching from Employer Contact to Work Search Preparation Activity and confirming that employer-only fields disappear.

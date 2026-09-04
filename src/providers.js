@@ -113,7 +113,7 @@ export async function testProviderConnection({ provider, apiKey, model, request 
   throw new Error("Choose a supported AI provider.");
 }
 
-export async function generateSuggestions({ provider, apiKey, model, prompt }) {
+export async function generateSuggestions({ provider, apiKey, model, prompt, signal, request = fetch }) {
   if (!apiKey?.trim()) throw new Error("Add an API key in Settings first.");
   const selectedModel = model?.trim() || defaultModel(provider);
 
@@ -126,8 +126,9 @@ export async function generateSuggestions({ provider, apiKey, model, prompt }) {
         input: prompt,
         temperature: 0.1,
         text: { format: { type: "json_object" } }
-      })
-    });
+      }),
+      signal
+    }, request);
     const output = data.output_text || data.output?.flatMap(item => item.content || []).find(item => item.type === "output_text")?.text;
     if (!output) throw new Error("OpenAI returned no text response.");
     return output;
@@ -142,8 +143,9 @@ export async function generateSuggestions({ provider, apiKey, model, prompt }) {
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true"
       },
-      body: JSON.stringify({ model: selectedModel, max_tokens: 4096, temperature: 0.1, messages: [{ role: "user", content: prompt }] })
-    });
+      body: JSON.stringify({ model: selectedModel, max_tokens: 4096, temperature: 0.1, messages: [{ role: "user", content: prompt }] }),
+      signal
+    }, request);
     const output = data.content?.find(item => item.type === "text")?.text;
     if (!output) throw new Error("Anthropic returned no text response.");
     return output;
@@ -157,8 +159,9 @@ export async function generateSuggestions({ provider, apiKey, model, prompt }) {
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-      })
-    });
+      }),
+      signal
+    }, request);
     const output = data.candidates?.[0]?.content?.parts?.map(part => part.text || "").join("");
     if (!output) throw new Error("Gemini returned no text response.");
     return output;

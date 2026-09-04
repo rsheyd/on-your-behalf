@@ -2,7 +2,7 @@
 
 ## Goal
 
-Make repeated sections such as employment history reliable when OYB replaces existing records, reveals dependent controls, adds rows, takes longer than one minute, or loses its popup because the user changes tabs.
+Make repeated sections such as employment history reliable when OYB replaces existing records, reveals dependent controls, adds rows, processes a long form in batches, reaches an operational limit, or loses its popup because the user changes tabs.
 
 The implementation should remain general enough for education, addresses, dependents, and references. It should not contain Guidepoint-specific selectors or encode employment records in the application.
 
@@ -12,9 +12,9 @@ The implementation should remain general enough for education, addresses, depend
 
 OYB currently combines replacement and row creation in one multi-round loop. Changing a control such as `Currently Employed` can reveal end-date fields and cause a rescan. A later AI request can then assign the source records again from the beginning, leaving original rows unchanged while adding duplicate records at the end.
 
-### Work exceeds the timeout
+### Long forms exceed fixed limits
 
-Repeated rescans and AI calls can consume the current 60-second allowance before a long section is complete. The timeout is reached even while useful progress is being made.
+Repeated rescans and AI calls can consume the current 60-second allowance before a long section is complete. A larger fixed timeout alone would only give an inefficient or stalled loop more time, while a universal AI-round limit does not scale naturally from a short questionnaire to a long multi-section form.
 
 ### The popup owns the operation
 
@@ -27,11 +27,15 @@ Chrome destroys a toolbar popup when it loses focus. Because the popup currently
 - Reuse generated suggestions after a dependent-control mutation whenever their stable field identities remain valid.
 - Ask the AI again only for newly revealed or newly created fields, not to re-plan records already assigned.
 - Keep orchestration independent of the popup lifecycle and retain the existing prohibition on submission, saving, progression, and navigation.
+- Process long forms in coherent section or repeated-group batches and checkpoint completed work automatically.
+- Treat zero-progress detection as the normal stopping mechanism and wall-clock limits as emergency guardrails.
 - Prefer small state and pure helpers over a Guidepoint-specific workflow engine.
 
 ## Phases
 
 ### Phase 1: Reproduction fixture and diagnostic assertions
+
+Status: Complete. The fixture and pure diagnostic contracts are covered by automated tests; production fill behavior is unchanged by this phase.
 
 Extend `test/employment-history-form.html` to mirror the relevant behavior of the observed form:
 
@@ -48,6 +52,8 @@ Completion gate: the fixture reproduces all three reported failures on the pre-f
 
 ### Phase 2: Transactional replacement of existing rows
 
+Status: Implemented. The local fixture contract, transactional state sequence, and a live four-row provider assignment are verified; the final toolbar-popup smoke test remains part of release validation.
+
 At the beginning of a replacement run, capture the stable identifiers and ordinals of every repeated row already in the selected scope. Treat those rows as the replacement set.
 
 Generate assignments for that set once. When a checkbox or select changes the DOM:
@@ -63,37 +69,55 @@ Completion gate: with four incorrect existing rows, replacement writes the first
 
 ### Phase 3: Controlled row expansion
 
+Status: Implemented. Add-row decisions are explicit even with no ordinary fields pending, and each newly added entry must settle before another action becomes available. Live provider checks requested one fifth row and filled it with an unrepresented source record.
+
 After the replacement set is complete, compare populated records with the enabled source material and allow one in-scope add-row action when another useful record remains. Fill the new row before considering another addition.
 
 The existing round bound remains the runaway protection. OYB must never remove a row automatically and must never activate submit, save, continue, next, or other navigation controls.
 
 Completion gate: additional records begin at row 5, no existing source record is duplicated, and the fixture reports exactly the number of add-row activations needed for the records filled.
 
-### Phase 4: Longer progress-based runtime
+### Phase 4: Background-owned operation and automatic checkpoints
 
-Replace the fixed one-minute cutoff with a three-minute ceiling while retaining the six-round limit. Track recent progress so a stalled operation ends promptly rather than consuming the full allowance.
-
-Reducing redundant AI calls is the primary performance improvement; the longer ceiling is a fallback for legitimately slow providers and dynamic forms.
-
-Completion gate: a fixture run with artificial delays exceeding 60 seconds completes successfully, while a no-progress run stops without waiting three minutes.
-
-### Phase 5: Background-owned fill operation
+Status: Implemented. The service worker owns the fill loop, checkpoints after meaningful stages, and exposes active, paused, completed, and failed status to a reopened popup. Pure resume reconciliation is covered by automated tests; the unpacked-extension popup-close and tab-switch smoke scenario remains for release validation.
 
 Move the multi-round orchestration and operation state from `src/popup.js` into the extension service worker. At startup, capture the target tab ID, selected section, replacement choice, form context, profile/source toggles, and answering settings.
+
+Persist a compact checkpoint containing the target page and scope, completed stable fields and repeated records, remaining batches, queued suggestions that have not yet been applied, operation settings, progress, and the final stopping reason. Reconcile that checkpoint with a fresh page scan before resuming so user edits are preserved unless replacement remains enabled and stale field identities are not applied blindly.
 
 The background operation should:
 
 - Continue addressing the captured target tab even if another tab becomes active.
-- Persist compact progress and final results in session storage.
-- Permit a reopened popup to render the current or completed operation.
+- Permit a reopened popup to render the current, paused, or completed operation.
+- Offer a simple `Continue filling` action after an operational limit without requiring advanced configuration.
 - Prevent a second fill from starting for the same tab while one is active.
-- Report clearly if the target tab closes, navigates, or becomes unavailable.
+- Report clearly if the target tab closes, navigates, or changes too substantially to resume safely.
 
 The popup becomes a command and status view. Closing it must not cancel work. No automatic submission or navigation is introduced.
 
-Completion gate: start a delayed fixture fill, close the popup, switch to another tab, reopen the popup, and observe that the original fixture continued and its final result remains visible.
+Completion gate: start a delayed fixture fill, close the popup, switch to another tab, reopen the popup, and observe that the original fixture continued. Stop a partially completed operation at a test limit, reopen OYB, continue it, and confirm that completed fields are not regenerated or overwritten.
+
+### Phase 5: Adaptive batching and progress-based limits
+
+Status: Implemented. Pending fields are divided into section-aware batches of up to 25 fields without splitting repeated entries. AI calls scale with the initial batch count plus two follow-ups and gain only the calls needed to evaluate and fill each successfully added repeated row. DOM work has a separate 20-pass bound, provider calls time out individually, and zero-progress detection or the five-minute emergency ceiling preserves a resumable checkpoint. Pure batching, limit decisions, and the production orchestration loop are covered by automated tests.
+
+Scan the selected scope once and divide large forms into coherent batches, preferring page sections and complete repeated groups over arbitrary field boundaries. A first implementation may cap ordinary batches at approximately 20–30 fields while keeping each repeated record together.
+
+Separate expensive AI requests from inexpensive DOM passes. Generate a complete desired repeated-record set when practical, reuse queued suggestions after mutations, and allow DOM rescans and row additions without counting each one as another AI round.
+
+Use limits that scale with the work:
+
+- Set the AI-call allowance to the number of initial batches plus up to two follow-up calls for genuinely new or unresolved fields, then extend it only when a repeated row is actually added and needs an answer-and-decision cycle.
+- Give each provider request its own timeout so one stalled request cannot consume the entire operation.
+- Allow a bounded number of DOM passes, initially around 20, while stopping immediately when a pass fills no field, changes no control, reveals no field, and adds no row.
+- Retain a generous overall ceiling, initially five minutes for a large form, only as a final runaway guardrail.
+- Preserve the checkpoint and remaining batches whenever any limit is reached so the next action resumes instead of restarting.
+
+Completion gate: a short form normally completes in one to three AI calls; a long fixture is processed section by section with an adaptive call allowance; an artificial delay beyond 60 seconds can complete; a no-progress run stops promptly; and a deliberately limited run resumes from its first unfinished batch.
 
 ### Phase 6: End-to-end verification and documentation
+
+Status: Implemented. The production orchestration loop now runs behind a small adapter boundary shared by Chrome and headless tests. The offline integration test verifies four-row replacement, dependent end-date revelation, current-row preservation, bounded expansion, and exact final state. The opt-in private OpenAI check passed against a bounded excerpt of `roman-only/linkedin-profile.md`, producing the expected first five employment records in five calls with one added row. Chrome remains covered by the thin messaging adapter and a bounded active-operation keep-alive; routine answer-order and expansion testing no longer requires a browser, local server, popup interaction, or unpacked-extension reload.
 
 Run the completed implementation against the local fixture using a sanitized source first, then perform a private live-provider comparison using `roman-only/linkedin-profile.md` and the configured OpenAI credential without logging the credential or committing personal data.
 
@@ -107,10 +131,13 @@ Completion gate: automated tests, syntax checks, `git diff --check`, and every a
 2. **Reveal past-job end dates:** Changing an incorrectly current row to non-current reveals and fills its correct end month and year without reassigning another row.
 3. **Preserve a current job:** The current row remains checked and its end-date controls remain blank and disabled.
 4. **Add remaining records:** New rows contain only source records not already represented in the original rows.
-5. **Slow successful run:** Artificial delays push elapsed time beyond 60 seconds but below three minutes, and the operation completes.
+5. **Long batched form:** A multi-section fixture is processed in coherent batches without splitting a repeated record or imposing a universal three-call limit.
 6. **Popup closure and tab switch:** Closing the popup and activating another tab do not interrupt the captured target-tab operation.
 7. **Reopen status:** Reopening the popup shows current progress or the final result from session storage.
-8. **Safety invariants:** Fixture counters confirm zero submit, save, continue, and navigation attempts.
+8. **Pause and resume:** A test limit stops a partially completed fill, `Continue filling` resumes at the first unfinished batch, and prior user edits remain intact unless replacement is still selected.
+9. **Slow successful run:** Artificial delays push elapsed time beyond 60 seconds while measurable progress continues, and the operation completes within the emergency ceiling.
+10. **Stalled run:** A pass with no filled fields, changed controls, revealed fields, or added rows stops promptly rather than consuming the overall ceiling.
+11. **Safety invariants:** Fixture counters confirm zero submit, save, continue, and navigation attempts.
 
 ## Acceptance criteria
 
@@ -118,12 +145,14 @@ Completion gate: automated tests, syntax checks, `git diff --check`, and every a
 - Each source record stays bound to one row across rescans and dependent-field changes.
 - Existing records are not duplicated at the end of the section.
 - End dates are filled for non-current jobs and remain empty for current jobs.
-- A productive operation may run for up to three minutes but remains bounded to six rounds.
+- AI calls scale with coherent batches and are distinct from bounded DOM passes.
+- A stalled operation stops promptly, while the overall time ceiling remains only an emergency guardrail.
+- Reaching a limit preserves completed work and allows a configuration-free continuation from the remaining fields.
 - Popup closure and tab switching do not cancel an active fill.
-- A reopened popup accurately displays active or completed status.
+- A reopened popup accurately displays active, paused, or completed status.
 - The implementation remains provider-neutral and reusable for repeated sections beyond employment history.
 - OYB never submits the form or activates navigation or progression controls.
 
 ## Implementation order
 
-Implement Phases 1 and 2 together and prove replacement correctness before changing runtime ownership. Then add controlled row expansion, adjust the timeout, and finally move orchestration into the service worker. This order keeps behavioral defects separate from lifecycle changes and leaves a working fixture available throughout the refactor.
+Phases 1 through 3 establish replacement correctness and controlled expansion. Next move orchestration and checkpointing into the service worker so longer operations survive popup closure and can resume safely. Only then add adaptive batching and progress-based limits, because extending runtime before durable ownership would preserve the current lifecycle failure and mask inefficient loops. Finish with end-to-end verification and documentation.

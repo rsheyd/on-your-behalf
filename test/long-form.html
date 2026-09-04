@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Long Form Fixture</title>
+    <style>body{font:16px system-ui;max-width:960px;margin:2rem auto;padding:0 1rem}section{border:1px solid #ccc;margin:1rem 0;padding:1rem}label{display:block;margin:.6rem 0}input{margin-left:.5rem}</style>
+  </head>
+  <body>
+    <main>
+      <h1>Long Form Fixture</h1>
+      <form id="long-form">
+        <section id="personal"><h2>Personal details</h2></section>
+        <section id="history"><h2>Project history</h2><div id="project-rows"></div></section>
+        <section id="references"><h2>References</h2></section>
+        <button type="submit">Submit</button>
+      </form>
+      <pre id="fixture-state"></pre>
+    </main>
+    <script>
+      const addFields = (container, prefix, count) => {
+        for (let index = 1; index <= count; index += 1) {
+          const label = document.createElement("label");
+          label.textContent = `${prefix} ${index}`;
+          const input = document.createElement("input");
+          input.name = `${prefix.toLowerCase().replaceAll(" ", "_")}_${index}`;
+          label.append(input);
+          container.append(label);
+        }
+      };
+      addFields(document.querySelector("#personal"), "Personal field", 30);
+      for (let row = 1; row <= 4; row += 1) {
+        const entry = document.createElement("fieldset");
+        entry.innerHTML = `<legend>Project ${row}</legend><label>Organization <input name="projects[${row}].organization"></label><label>Role <input name="projects[${row}].role"></label><label>Start year <input name="projects[${row}].start_year"></label><label>End year <input name="projects[${row}].end_year"></label>`;
+        document.querySelector("#project-rows").append(entry);
+      }
+      addFields(document.querySelector("#references"), "Reference field", 30);
+      const state = { submitAttempts: 0 };
+      document.querySelector("#long-form").addEventListener("submit", event => { event.preventDefault(); state.submitAttempts += 1; render(); });
+      const render = () => { document.querySelector("#fixture-state").textContent = JSON.stringify({ ...state, filled: [...document.querySelectorAll("input")].filter(input => input.value).length }); };
+      document.querySelector("#long-form").addEventListener("input", render);
+      render();
+    </script>
+  </body>
+</html>

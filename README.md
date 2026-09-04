@@ -125,12 +125,12 @@ Completed onboarding direction and the remaining profile, portability, and first
 ## Project structure
 
 - `manifest.json` — Manifest V3 extension configuration and version.
-- `src/background.js` — AI request orchestration.
+- `src/background.js` — checkpointed fill-operation and AI request orchestration.
 - `src/content.js` — page scanning and filling.
 - `src/answer-policy.js` — canonical compact AI answering policy.
 - `src/form-core.js`, `src/form-state.js`, `src/prompt.js`, `src/providers.js`, `src/document-import.js`, and `src/supporting-documents.js` — standalone form, scan-state, prompt, parsing, provider, document-import, and supporting-file logic.
 - `src/vendor/` — browser-ready PDF.js distribution with its license.
-- `src/popup.*` — compact scan-and-fill action.
+- `src/popup.*` — compact fill controls and persistent operation status.
 - `src/options.*` — profile and provider settings.
 - `docs/images/` — screenshots used in this README.
 - `icons/` — extension icon sizes and the high-resolution generated source artwork.
@@ -138,6 +138,7 @@ Completed onboarding direction and the remaining profile, portability, and first
 - `docs/roadmap/` — longer-term product direction and ideas.
 - `test/*.test.js` — unit tests for standalone logic.
 - `test/manual-form.html` — a manual compatibility fixture.
+- `test/long-form.html` — a multi-section fixture for adaptive batching and resumable limits.
 - `PROFILE-TEMPLATE.md` — short Google Docs-friendly starter profile.
 - `PROFILE-FIELD-GUIDE.md` — optional extended list of profile fields and migration guidance.
 

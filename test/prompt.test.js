@@ -114,6 +114,8 @@ test("prompt keeps repeated fields in the primary answerable list with lightweig
   assert.match(prompt, /add-employment/);
   assert.match(prompt, /not yet represented/i);
   assert.match(prompt, /ADD-ROW DECISION/);
+  assert.match(prompt, /including when FIELDS TO ANSWER is empty/i);
+  assert.match(prompt, /shared parent values do not collapse distinct labeled or dated sub-entries/i);
 });
 
 test("accepts only scanned add-row actions and caps the response at one", () => {
