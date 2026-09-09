@@ -48,16 +48,65 @@ test("production fill loop honors cancellation before another page mutation", as
 test("production fill loop applies a validated collection plan without repeated AI calls", async () => {
   const fixture = employmentMemoryFixture([{ company: "Wrong", title: "Wrong", current: false, startMonth: "01", startYear: "2020", endMonth: "02", endYear: "2021" }]);
   let calls = 0;
+  const events = [];
   const generate = async ({ fields, planCollection }) => {
     calls += 1;
     if (planCollection) return { plan: [collectionPlan[0]], suggestions: [], unresolved: [], actions: [] };
     if (calls === 1) return { suggestions: [], unresolved: [], invalid: [{ fieldId: fields[2].fieldId, reason: "invalid_value" }] };
     return { suggestions: fields.map(field => ({ fieldId: field.fieldId, value: valueFor(records[0], field.semanticHint), basis: "supported" })).filter(item => item.value !== undefined), unresolved: [], actions: [] };
   };
-  const result = await runFillLoop({ state: createFillCheckpoint(fixture.scan(), true), options: { replaceExisting: true }, generate, fill: payload => fixture.fill(payload), activate: action => fixture.activate(action) });
+  const result = await runFillLoop({ state: createFillCheckpoint(fixture.scan(), true), options: { replaceExisting: true }, generate, fill: payload => fixture.fill(payload), activate: action => fixture.activate(action), onEvent: async (type, data) => events.push({ type, data }) });
   assert.equal(result.stopReason, "stable");
   assert.equal(calls, 1);
   assert.deepEqual(fixture.rows[0], records[0]);
+  assert.ok(events.some(event => event.type === "batch_selected" && event.data.source === "saved_plan"));
+  assert.ok(events.some(event => event.type === "plan_applied" && event.data.suggestedFieldIds.length));
+  assert.ok(events.some(event => event.type === "loop_progress" && event.data.filledCount));
+  assert.ok(events.some(event => event.type === "stop_evaluation" && event.data.decision === "stable"));
+});
+
+test("diagnostics record stranded fields and the values behind a stop decision", async () => {
+  const field = { fieldId: "later", kind: "input", inputType: "text", label: "Later compliance question", empty: true, currentValue: "" };
+  const scan = { fields: [field], actions: [], page: {} };
+  const events = [];
+  const result = await runFillLoop({
+    state: createFillCheckpoint(scan, false),
+    options: { replaceExisting: false },
+    generate: async () => ({ suggestions: [], unresolved: [], invalid: [], actions: [] }),
+    fill: async () => { throw new Error("fill should not run"); },
+    activate: async () => { throw new Error("activate should not run"); },
+    onEvent: async (type, data) => events.push({ type, data })
+  });
+  assert.equal(result.stopReason, "no_answers");
+  assert.deepEqual(events.find(event => event.type === "stop_evaluation")?.data, { decision: "no_answers", pendingCount: 1, actionCount: 0, queuedCount: 0, progressCount: 1, aiCalls: 1, aiAllowance: 3 });
+  assert.deepEqual(events.find(event => event.type === "fields_stranded")?.data.fields, [{ fieldId: "later", label: "Later compliance question" }]);
+});
+
+test("an incomplete replacement plan resolves its missing fields and continues to ordinary fields", async () => {
+  const fields = [
+    { fieldId: "planned", kind: "input", inputType: "text", label: "Planned role", groupId: "screening", groupLabel: "Screening", entryOrdinal: 1, semanticHint: "planned role", sectionId: "screening", empty: false, currentValue: "old" },
+    { fieldId: "missing", kind: "input", inputType: "text", label: "Missing role", groupId: "screening", groupLabel: "Screening", entryOrdinal: 1, semanticHint: "missing role", sectionId: "screening", empty: true, currentValue: "" },
+    { fieldId: "ordinary", kind: "radio", label: "Later compliance question", sectionId: "compliance", empty: true, currentValue: "", options: [{ value: "No", label: "No" }, { value: "Yes", label: "Yes" }] }
+  ];
+  let currentFields = fields.map(field => ({ ...field }));
+  const events = [];
+  let calls = 0;
+  const generate = async ({ fields: requested, planCollection }) => {
+    calls += 1;
+    if (planCollection) return { plan: [{ "planned role": "new" }], suggestions: [], unresolved: [], actions: [] };
+    return { suggestions: requested.map(field => ({ fieldId: field.fieldId, value: "No", basis: "chosen" })), unresolved: [], invalid: [], actions: [] };
+  };
+  const fill = async ({ suggestions }) => {
+    const answered = new Set(suggestions.map(item => item.fieldId));
+    currentFields = currentFields.map(field => answered.has(field.fieldId) ? { ...field, empty: false, currentValue: "updated" } : field);
+    return { ok: true, filled: answered.size, filledIds: [...answered], failed: [], skipped: [], basisCounts: { supported: 0, inferred: 0, chosen: 0 }, mutated: false, remainingSuggestions: [], scan: { fields: currentFields, actions: [], page: {} } };
+  };
+  const result = await runFillLoop({ state: createFillCheckpoint({ fields: currentFields, actions: [], page: {} }, true), options: { replaceExisting: true }, generate, fill, activate: async () => ({ ok: true, activated: false }), onEvent: async (type, data) => events.push({ type, data }) });
+  assert.equal(result.stopReason, "stable");
+  assert.equal(calls, 2);
+  assert.deepEqual(result.state.unresolved, [{ fieldId: "missing", reason: "missing_profile_info" }]);
+  assert.ok(result.state.filledIds.includes("ordinary"));
+  assert.deepEqual(events.find(event => event.type === "plan_applied")?.data.missingFromPlan, [{ fieldId: "missing", label: "Missing role" }]);
 });
 
 test("production fill loop confirms one declined add-row decision", async () => {

@@ -27,6 +27,21 @@
     return chosen.length > maxLength ? `${chosen.slice(0, maxLength - 1)}…` : chosen;
   }
 
+  function genericIndexedRole(value) {
+    const normalized = normalize(value).toLowerCase();
+    const match = normalized.match(/^(.*?)(?:explain(?: further)?|answer|response|text|details?|comments?|description)$/);
+    if (!match) return false;
+    const prefix = normalize(match[1]);
+    return !prefix || /\d|^(?:q(?:uestion)?|field|input)\b/.test(prefix);
+  }
+
+  function chooseIndexedFieldLabel({ nearbyLabel = "", semanticHint = "", maxLength = 500 } = {}) {
+    const nearby = normalize(nearbyLabel);
+    const semantic = normalize(semanticHint);
+    const chosen = genericIndexedRole(semantic) && meaningful(nearby) ? nearby : semantic || nearby;
+    return chosen.length > maxLength ? `${chosen.slice(0, maxLength - 1)}…` : chosen;
+  }
+
   function chooseInstructionHint(candidates = [], maxLength = 400) {
     const cue = /\b(?:please|instructions?|keywords?|commas?|separate|format|enter|provide|specify|maximum|minimum|required)\b/i;
     for (const candidate of candidates.map(normalize)) {
@@ -39,5 +54,5 @@
     return "";
   }
 
-  root.OpenFormFillerLabels = Object.freeze({ chooseFieldLabel, chooseInstructionHint, meaningful, withoutOptions });
+  root.OpenFormFillerLabels = Object.freeze({ chooseFieldLabel, chooseIndexedFieldLabel, chooseInstructionHint, genericIndexedRole, meaningful, withoutOptions });
 })(globalThis);

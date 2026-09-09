@@ -221,7 +221,7 @@ function recordEvent(operation, type, data) {
 }
 
 async function logRunnerEvent(operation, type, data) {
-  const compact = type === "ai_request" ? { aiCall: data.aiCall, fields: compactFields(data.fields), actions: data.actions, ...(data.planCollection ? { planCollection: data.planCollection } : {}) } : type === "ai_response" ? { aiCall: data.aiCall, suggestions: compactSuggestions(data.suggestions), unresolved: compactSuggestions(data.unresolved), invalid: compactSuggestions(data.invalid), actions: data.actions, ...(data.plan ? { plan: compactCollectionPlan(data.plan), planInvalid: compactSuggestions(data.planInvalid) } : {}) } : data;
+  const compact = type === "ai_request" ? { aiCall: data.aiCall, fields: compactFields(data.fields), actions: data.actions, ...(data.planCollection ? { planCollection: data.planCollection } : {}) } : type === "ai_response" ? { aiCall: data.aiCall, suggestions: compactSuggestions(data.suggestions), unresolved: compactSuggestions(data.unresolved), invalid: compactSuggestions(data.invalid), actions: data.actions, ...(data.plan ? { plan: compactCollectionPlan(data.plan), planInvalid: compactSuggestions(data.planInvalid) } : {}) } : type === "batch_selected" ? { ...data, selectedFields: compactFields(data.selectedFields) } : type === "plan_applied" ? { ...data, requestedFields: compactFields(data.requestedFields), missingFromPlan: compactFields(data.missingFromPlan) } : type === "fields_stranded" ? { ...data, fields: compactFields(data.fields) } : data;
   recordEvent(operation, type, compact);
   await writeOperation(operation);
 }

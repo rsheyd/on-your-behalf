@@ -10,9 +10,9 @@
       <h1>Agent Runtime Environment Solutions Expert Screening</h1>
       <p>Our client is looking to speak with specialists in agent runtime environment solutions, product strategy, pricing, discounting, and go-to-market execution.</p>
       <form id="screening-form">
-        <section><p>Have you been directly involved with cloud-based agent runtime or execution environment solutions? Specify the platforms and describe your expertise, experience, and responsibilities.</p><div><textarea name="q_internal_1_text"></textarea></div></section>
-        <section><p>Are you able to discuss detailed features of agent runtime environments, agent lifecycle management, and third-party integrations for a named cloud sandbox product?</p><div><textarea name="q_internal_2_text"></textarea></div></section>
-        <section><p>Can you provide insights into enterprise pricing models and discounting strategies for that product, including differences in capabilities, usage limits, or deployment options?</p><div><textarea name="q_internal_3_text"></textarea></div></section>
+        <section><p>Have you been directly involved with cloud-based agent runtime or execution environment solutions?</p><div><label><input type="radio" name="q9587168_0_choice" value="Yes"> Yes</label><label><input type="radio" name="q9587168_0_choice" value="No"> No</label></div><div><textarea name="q9587168_0_explain" placeholder="Please explain further"></textarea></div></section>
+        <section><p>Are you able to discuss detailed features of agent runtime environments and third-party integrations?</p><div><label><input type="radio" name="q9587168_1_choice" value="Yes"> Yes</label><label><input type="radio" name="q9587168_1_choice" value="No"> No</label></div><div><textarea name="q9587168_1_explain" placeholder="Please explain further"></textarea></div></section>
+        <section><p>Can you provide insights into enterprise pricing models and discounting strategies for that product?</p><div><label><input type="radio" name="q9587168_2_choice" value="Yes"> Yes</label><label><input type="radio" name="q9587168_2_choice" value="No"> No</label></div><div><textarea name="q9587168_2_explain" placeholder="Please explain further"></textarea></div></section>
         <section><p>Are you familiar with its go-to-market approach, sales motions, and key customer decision-making factors?</p><div><textarea name="q_internal_4_text"></textarea></div></section>
         <section>
           <p>Do you consent to this call being recorded, transcribed, or summarized?</p>
@@ -34,6 +34,16 @@
         event.preventDefault();
         submissionAttempts += 1;
         document.querySelector("#submission-status").textContent = `Submission attempts: ${submissionAttempts}`;
+      });
+    </script>
+    <script>window.chrome={runtime:{onMessage:{addListener(listener){window.fixtureListener=listener},removeListener(){}}}};</script>
+    <script src="../src/form-state.js"></script>
+    <script src="../src/field-label.js"></script>
+    <script src="../src/content.js"></script>
+    <script>
+      window.fixtureListener({type:"SCAN_FORM"}, {}, result => {
+        const explanations = result.fields.filter(field => field.name.endsWith("_explain"));
+        document.body.dataset.explanationLabels = JSON.stringify(explanations.map(field => field.label));
       });
     </script>
   </body>

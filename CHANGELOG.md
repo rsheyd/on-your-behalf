@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- Kept each indexed explanation box associated with its nearby screening question instead of replacing that context with a generic internal field role.
+- Added privacy-bounded diagnostics for batch selection, saved-plan application, loop progress, stop decisions, and fields stranded when a run ends early.
+- Allowed replacement runs to mark fields omitted from a saved collection plan as missing information and continue to later ordinary form sections.
+
 ## 0.6.0
 
 - Added a per-fill answering posture with Strongest truthful case, Exact experience only, and Leave uncertain answers open options.

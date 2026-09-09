@@ -1,5 +1,5 @@
 (function initializeOpenFormFiller() {
-  const CONTENT_REVISION = "0.6.0-20260904.shared-instructions";
+  const CONTENT_REVISION = "0.6.1-20260909.indexed-explanation-context";
   if (globalThis.__openFormFillerLoaded === CONTENT_REVISION) return;
   if (globalThis.__openFormFillerMessageListener) {
     chrome.runtime.onMessage.removeListener(globalThis.__openFormFillerMessageListener);
@@ -295,7 +295,8 @@
 
       const nearby = nearbyLabel(element);
       const indexedOrdinal = indexedEntry(element);
-      const label = indexedOrdinal ? semanticHint(element, nearby) : nearby;
+      const semantic = indexedOrdinal ? semanticHint(element, nearby) : "";
+      const label = indexedOrdinal ? fieldLabels.chooseIndexedFieldLabel({ nearbyLabel: nearby, semanticHint: semantic }) : nearby;
       if (sensitive(element, label)) continue;
 
       const kind = type === "checkbox" ? "checkbox"

@@ -28,3 +28,21 @@ test("production scanner captures shared instructions without inventing a repeat
   assert.match(output, /data-keyword-instruction-captured="true"/);
   assert.match(output, /data-repeated-group-count="0"/);
 });
+
+test("production scanner associates each indexed explanation with its own screening question", { skip: process.platform !== "darwin", timeout: 15000 }, async () => {
+  const chrome = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
+  const child = spawn(chrome, ["--headless=new", "--no-sandbox", "--disable-gpu", "--disable-background-networking", "--no-first-run", `--user-data-dir=/tmp/oyb-screening-scanner-test-${process.pid}`, "--virtual-time-budget=1000", "--dump-dom", new URL("./expert-screening-form.html", import.meta.url).href]);
+  let output = "";
+  let errors = "";
+  child.stdout.on("data", chunk => { output += chunk; if (/data-explanation-labels=/.test(output)) child.kill("SIGINT"); });
+  child.stderr.on("data", chunk => { errors += chunk; });
+  await new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => { child.kill("SIGKILL"); reject(new Error(`Headless scanner timed out. ${errors}`)); }, 10000);
+    child.on("error", reject);
+    child.on("close", () => { clearTimeout(timeout); resolve(); });
+  });
+  assert.match(output, /data-explanation-labels="[^"]*directly involved/);
+  assert.match(output, /data-explanation-labels="[^"]*detailed features/);
+  assert.match(output, /data-explanation-labels="[^"]*pricing models/);
+  assert.doesNotMatch(output, /data-explanation-labels="[^"]*q9587168 explain/);
+});
