@@ -5,15 +5,20 @@ import { actionsInScope, fieldsInScope } from "./form-scope.js";
 import { reconcileCheckpointForResume } from "./fill-operation.js";
 import { createFillCheckpoint, runFillLoop } from "./fill-runner.js";
 import { appendRunHistory, appendTrace, compactCollectionPlan, compactFields, compactSuggestions } from "./run-history.js";
-import { actionIndicatorFor } from "./action-indicator.js";
+import { actionIndicatorFor, COMPLETION_BADGE_DURATION_MS } from "./action-indicator.js";
 
 const FILL_OPERATION_KEY = "fillOperation";
 const RUN_HISTORY_KEY = "runHistory";
 const PROVIDER_TIMEOUT_MS = 25000;
 const KEEPALIVE_INTERVAL_MS = 20000;
+const COMPLETION_BADGE_ALARM = "clearCompletionBadge";
 const activeRuns = new Map();
 
-readOperation().then(updateActionIndicator).catch(() => {});
+readOperation().then(operation => Promise.all([updateActionIndicator(operation), scheduleCompletionBadgeExpiry(operation)])).catch(() => {});
+
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name === COMPLETION_BADGE_ALARM) readOperation().then(updateActionIndicator).catch(() => {});
+});
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === "GENERATE_SUGGESTIONS") {
@@ -30,6 +35,10 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
   if (message?.type === "GET_FILL_OPERATION") {
     getFillOperation(message.tabId).then(sendResponse);
+    return true;
+  }
+  if (message?.type === "ACKNOWLEDGE_COMPLETION_BADGE") {
+    acknowledgeCompletionBadge(message.operationId).then(sendResponse);
     return true;
   }
   if (message?.type === "CANCEL_FILL") {
@@ -182,6 +191,22 @@ async function readOperation() {
 async function writeOperation(operation) {
   await chrome.storage.session.set({ [FILL_OPERATION_KEY]: operation });
   await updateActionIndicator(operation);
+  await scheduleCompletionBadgeExpiry(operation);
+}
+
+async function scheduleCompletionBadgeExpiry(operation) {
+  await chrome.alarms.clear(COMPLETION_BADGE_ALARM);
+  if (operation?.status !== "complete" || operation.completionBadgeAcknowledged === true) return;
+  const remainingMs = COMPLETION_BADGE_DURATION_MS - (Date.now() - Number(operation.updatedAt || 0));
+  if (remainingMs > 0) await chrome.alarms.create(COMPLETION_BADGE_ALARM, { when: Date.now() + remainingMs });
+}
+
+async function acknowledgeCompletionBadge(operationId) {
+  const operation = await readOperation();
+  if (!operation || operation.operationId !== operationId || operation.status !== "complete") return { ok: true };
+  operation.completionBadgeAcknowledged = true;
+  await writeOperation(operation);
+  return { ok: true };
 }
 
 async function updateActionIndicator(operation) {

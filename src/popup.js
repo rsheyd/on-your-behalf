@@ -237,6 +237,7 @@ async function restoreFillOperation() {
     const response = await chrome.runtime.sendMessage({ type: "GET_FILL_OPERATION", tabId: tab.id });
     if (!response?.operation) return;
     renderOperation(response.operation);
+    if (response.operation.status === "complete") await chrome.runtime.sendMessage({ type: "ACKNOWLEDGE_COMPLETION_BADGE", operationId: response.operation.operationId });
     if (response.operation.status === "running") startOperationPolling();
   } catch {
     return;

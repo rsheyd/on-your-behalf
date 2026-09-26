@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.3
+
+- Made the area outside the rounded OYB icon transparent so white corners no longer appear in the browser toolbar.
+
+## 0.6.2
+
+- Cleared the green completion checkmark when OYB is reopened after a fill or after one minute, while keeping paused and error indicators visible until addressed.
+
 ## 0.6.1
 
 - Kept each indexed explanation box associated with its nearby screening question instead of replacing that context with a generic internal field role.
