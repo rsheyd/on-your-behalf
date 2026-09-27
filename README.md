@@ -163,3 +163,5 @@ Please do not disclose suspected vulnerabilities in a public issue. Follow [`SEC
 On Your Behalf is available under the MIT License. See `LICENSE`.
 
 Store submission preparation is documented in [docs/STORE-LISTING.md](docs/STORE-LISTING.md). The dedicated [privacy policy](PRIVACY.md) describes storage, provider transfers, and deletion controls.
+
+Gemini defaults to `gemini-flash-latest`, Google’s moving Flash alias. Its underlying model, behavior, and pricing can change independently of OYB releases. Existing saved model choices are preserved; to adopt the alias, select Gemini, open Advanced settings, click Restore default model, and save settings. You can enter a specific model there instead.

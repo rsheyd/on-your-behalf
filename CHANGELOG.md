@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.5
+
+- Changed the default Gemini model to gemini-flash-latest so new configurations follow Google’s current Flash model. Existing saved model choices are preserved; use Restore default model to opt into the alias.
+
 ## 0.6.4
 
 - Fixed PDF profile and supporting-document imports failing with “document.destroy is not a function” after text extraction.

@@ -1,7 +1,7 @@
 const DEFAULT_MODELS = {
   openai: "gpt-4.1-mini",
   anthropic: "claude-3-5-haiku-latest",
-  gemini: "gemini-2.5-flash"
+  gemini: "gemini-flash-latest"
 };
 
 export const PROVIDERS = {
