@@ -87,3 +87,22 @@ Update `manifest.json`, update `CHANGELOG.md`, run automated tests, and complete
 ## Vendored import libraries
 
 PDF file import uses a browser-ready copy of PDF.js under `src/vendor/`; its license is stored beside it. DOCX import uses the browser's built-in ZIP decompression. To update PDF.js, update the npm dependency, copy its browser distribution and license into `src/vendor/`, then rerun the automated and manual checks.
+
+## Packaging and releases
+
+Release tooling requires Node.js 22.21 or newer (Node 24 is recommended); the extension runtime and pure tests retain their existing requirements. Run `npm ci` to install pinned release dependencies. `npm run package` creates `dist/on-your-behalf-VERSION.zip` and its SHA256 sidecar from manifest.json, runtime src files, vendored license, and the four extension icons. It rejects symlinks and unexpected runtime files, checks ZIP integrity and every archived file against its source, and excludes private profiles, tests, source artwork, and development files. CI checks packaging too.
+
+OYB uses release-it with a read-only bumper plugin: manifest.json remains the sole version source. Prepare the manifest version and matching newest numbered changelog section before release, following the existing versioning rule; release tooling does not automatically bump either. Packaging/release-maintenance changes alone do not require a version bump.
+
+After manual Chrome smoke checks of the extracted ZIP, commit all intended changes on main, then run:
+
+```bash
+npm run release -- --dry-run
+npm run release
+```
+
+The wrapper's dry run is offline and does not modify files, fetch credentials, run tests, or contact GitHub. It previews the current release and reports pending changes; it is not proof that remote permissions or tags are valid. The actual command requires clean main and the expected origin, obtains a token from the existing gh login if GITHUB_TOKEN is not provided, and runs release-it noninteractively. Tests, syntax checks, and verified packaging run before release; release-it handles commit, tag, push, GitHub notes from the newest changelog section, and ZIP/checksum assets. No token is written to disk or printed. Web Store upload and review remain manual; see docs/STORE-LISTING.md.
+
+### Interrupted release recovery
+
+Do not blindly rerun after a failure: publication is not atomic across Git and GitHub. Inspect `git status`, the local/remote tag, `gh release view vVERSION --repo rsheyd/on-your-behalf`, and its assets first. The wrapper refuses an existing local version tag so it cannot silently publish a different checkout under that version. If nothing was tagged or published, resolve the failure and rerun. If the correct tag was pushed but the release or assets are missing, recover using gh against that verified tag, with notes from `node scripts/release-notes.js` written to a temporary file and the exact previously verified ZIP/checksum. Compare the checksum to the uploaded artifact before declaring recovery complete. Do not delete or move a published tag to repair a release. A different artifact needs a new version. This recovery path remains manual and has not been live-published during setup.

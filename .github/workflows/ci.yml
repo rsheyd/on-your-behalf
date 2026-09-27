@@ -24,3 +24,5 @@ jobs:
         run: npm test
       - name: Check JavaScript syntax
         run: npm run check
+      - name: Verify store package
+        run: npm run package

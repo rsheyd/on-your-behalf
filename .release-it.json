@@ -1,0 +1,32 @@
+{
+  "npm": false,
+  "plugins": {
+    "@release-it/bumper": {
+      "in": "manifest.json"
+    }
+  },
+  "git": {
+    "requireBranch": "main",
+    "requireCleanWorkingDir": true,
+    "requireUpstream": true,
+    "commitMessage": "Release ${version}",
+    "tagName": "v${version}",
+    "pushRepo": "origin"
+  },
+  "github": {
+    "release": true,
+    "releaseName": "v${version}",
+    "releaseNotes": "node scripts/release-notes.js",
+    "assets": [
+      "dist/on-your-behalf-${version}.zip",
+      "dist/on-your-behalf-${version}.zip.sha256"
+    ]
+  },
+  "hooks": {
+    "before:bump": [
+      "npm test",
+      "npm run check",
+      "npm run package"
+    ]
+  }
+}

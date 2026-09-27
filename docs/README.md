@@ -7,3 +7,5 @@ Documentation is grouped by purpose:
 - [`images/`](images/) contains repository-owned screenshots used by the main README.
 
 User-facing setup, privacy, and installation guidance lives in the repository [`README`](../README.md). Development instructions are in [`DEVELOPMENT.md`](../DEVELOPMENT.md), and contribution expectations are in [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
+- [`STORE-LISTING.md`](STORE-LISTING.md) contains listing copy, permission explanations, reviewer steps, and the submission checklist.

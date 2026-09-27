@@ -161,3 +161,5 @@ Please do not disclose suspected vulnerabilities in a public issue. Follow [`SEC
 ## License
 
 On Your Behalf is available under the MIT License. See `LICENSE`.
+
+Store submission preparation is documented in [docs/STORE-LISTING.md](docs/STORE-LISTING.md). The dedicated [privacy policy](PRIVACY.md) describes storage, provider transfers, and deletion controls.
