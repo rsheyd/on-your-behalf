@@ -19,6 +19,59 @@ test("PDF items are ordered into readable lines", () => {
   assert.equal(pdfItemsToText(items), "Jane Doe\n\nExperience");
 });
 
+test("PDF imports extract all pages and destroy the loading task", async () => {
+  const calls = [];
+  const document = {
+    numPages: 2,
+    async getPage(number) {
+      return {
+        async getTextContent() {
+          return { items: [{ str: `Professional experience on page ${number}`, transform: [1, 0, 0, 1, 0, 100], height: 10 }] };
+        },
+        cleanup() { calls.push(`page ${number}`); }
+      };
+    }
+  };
+  const { file, dependencies } = pdfImportFixture(Promise.resolve(document), calls);
+  assert.equal(await importDocumentFile(file, dependencies), "Professional experience on page 1\n\nProfessional experience on page 2");
+  assert.deepEqual(calls, ["page 1", "page 2", "destroy"]);
+});
+
+test("PDF imports destroy the loading task when loading or extraction fails", async () => {
+  for (const phase of ["loading", "extraction"]) {
+    const calls = [];
+    const error = new Error(`${phase} failed`);
+    const promise = phase === "loading"
+      ? Promise.reject(error)
+      : Promise.resolve({ numPages: 1, getPage: async () => { throw error; } });
+    const { file, dependencies } = pdfImportFixture(promise, calls);
+    await assert.rejects(() => importDocumentFile(file, dependencies), candidate => candidate === error);
+    assert.deepEqual(calls, ["destroy"]);
+  }
+});
+
+test("PDF imports retain the scanned-document error after cleanup", async () => {
+  const calls = [];
+  const document = {
+    numPages: 1,
+    getPage: async () => ({ getTextContent: async () => ({ items: [] }), cleanup() {} })
+  };
+  const { file, dependencies } = pdfImportFixture(Promise.resolve(document), calls);
+  await assert.rejects(() => importDocumentFile(file, dependencies), /Scanned PDFs are not currently supported/);
+  assert.deepEqual(calls, ["destroy"]);
+});
+
+function pdfImportFixture(promise, calls) {
+  return {
+    file: { name: "resume.pdf", size: 1, arrayBuffer: async () => new ArrayBuffer(1) },
+    dependencies: {
+      loadPdfJs: async () => ({
+        getDocument: () => ({ promise, destroy: async () => { calls.push("destroy"); } })
+      })
+    }
+  };
+}
+
 test("Markdown imports preserve existing Markdown", async () => {
   const file = { name: "notes.md", size: 30, text: async () => "# Project notes\n\n- Decision\n" };
   assert.equal(await importDocumentFile(file), "# Project notes\n\n- Decision");

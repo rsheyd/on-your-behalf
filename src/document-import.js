@@ -106,10 +106,10 @@ async function importPdf(file, suppliedLoader) {
     data: new Uint8Array(await file.arrayBuffer()),
     isEvalSupported: false
   });
-  const document = await loadingTask.promise;
   const pages = [];
 
   try {
+    const document = await loadingTask.promise;
     for (let pageNumber = 1; pageNumber <= document.numPages; pageNumber += 1) {
       const page = await document.getPage(pageNumber);
       const content = await page.getTextContent();
@@ -117,7 +117,7 @@ async function importPdf(file, suppliedLoader) {
       page.cleanup();
     }
   } finally {
-    await document.destroy();
+    await loadingTask.destroy();
   }
 
   const text = pages.filter(Boolean).join("\n\n");

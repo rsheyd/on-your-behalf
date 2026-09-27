@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.4
+
+- Fixed PDF profile and supporting-document imports failing with “document.destroy is not a function” after text extraction.
+
 ## 0.6.3
 
 - Made the area outside the rounded OYB icon transparent so white corners no longer appear in the browser toolbar.
