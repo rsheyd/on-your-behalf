@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 — Unreleased
+## 0.6.0 — 2026-09-27
 
 - Added a per-fill answering posture with Strongest truthful case, Exact experience only, and Leave uncertain answers open options.
 - Allowed general model knowledge to interpret terminology while keeping personal claims grounded exclusively in the saved profile and temporary context.
