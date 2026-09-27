@@ -1,6 +1,6 @@
 # Chrome Web Store submission
 
-This is the canonical draft for the first OYB submission, prepared against version 0.6.5. Confirm the dashboard's current fields before submitting. Extension ID and published listing URL: pending first upload. The package version comes from manifest.json; do not claim that a GitHub release is already available in the Web Store.
+This is the canonical draft for the first OYB submission, prepared against version 0.6.0. Confirm the dashboard's current fields before submitting. Extension ID and published listing URL: pending first upload. The package version comes from manifest.json; do not claim that a GitHub release is already available in the Web Store.
 
 ## Listing copy
 
@@ -35,7 +35,7 @@ Complete the dashboard's data categories based on actual handling and transmissi
 
 ## Reviewer instructions
 
-1. Install OYB and open settings. Select Google Gemini and expand Advanced settings to set the model to `gemini-flash-latest`. Use the dedicated test key supplied separately in the private dashboard reviewer instructions, then click Test connection and save settings. There is no OYB login. The dedicated key passed OYB’s connection test on September 27, 2026 with `gemini-flash-latest`. The key still needs to be entered in the private dashboard field. OYB 0.6.5 defaults to `gemini-flash-latest`. Existing settings keep their saved model; use Restore default model and save settings if upgrading from an older version.
+1. Install OYB and open settings. Select Google Gemini and expand Advanced settings to set the model to `gemini-flash-latest`. Use the dedicated test key supplied separately in the private dashboard reviewer instructions, then click Test connection and save settings. There is no OYB login. The dedicated key passed OYB’s connection test on September 27, 2026 with `gemini-flash-latest`. The key still needs to be entered in the private dashboard field. OYB 0.6.0 defaults to `gemini-flash-latest`. Existing settings keep their saved model; use Restore default model and save settings if upgrading from an older version.
 2. Save a synthetic profile such as: “My name is Alex Example. I am a software engineer with five years of experience. My preferred language is English.” Never use private developer profile material.
 3. Open a simple form with name, occupation, and language fields. For a reproducible fixture, serve this repository with `python3 -m http.server 8765` and open `http://localhost:8765/test/manual-form.html`.
 4. Open OYB, select the intended section, and start a fill. Review the answers and missing-information report. Confirm that sensitive fields stay empty and submit/navigation counters stay zero.
@@ -46,7 +46,7 @@ Recommended access plan: supply a dedicated test credential from a separate prov
 ## Assets and submission checklist
 
 - Fresh submission assets are ready in store-assets/: three 1280×800 PNG screenshots and the required 440×280 small promotional tile. See store-assets/README.md for provenance and order. The listing icon is icons/icon-128.png.
-- Roman reported completing the extracted-ZIP smoke test on September 27, 2026 for version 0.6.4. Version 0.6.5 changes the Gemini default; the earlier smoke test does not certify this newer ZIP. A focused check of Gemini setup and a synthetic fill is required before submission.
+- Roman reported completing the extracted-ZIP smoke test on September 27, 2026 for version 0.6.4. Version 0.6.0 changes the Gemini default; the earlier smoke test does not certify this newer ZIP. A focused check of Gemini setup and a synthetic fill is required before submission.
 - Run `npm test`, `npm run check`, and `npm run package`.
 - For future releases, extract the generated ZIP into a fresh directory, load it unpacked in Chrome, and complete the relevant DEVELOPMENT.md smoke checks. Check service-worker errors, imports, provider calls, source toggles, sensitive-field skipping, and zero submit/navigation attempts.
 - Commit release preparation, preview with `npm run release -- --dry-run`, and publish the GitHub release with `npm run release` when ready.

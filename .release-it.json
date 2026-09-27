@@ -26,7 +26,8 @@
     "before:bump": [
       "npm test",
       "npm run check",
-      "npm run package"
+      "npm run package",
+      "node scripts/prepare-release.js"
     ]
   }
 }

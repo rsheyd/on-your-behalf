@@ -1,4 +1,7 @@
 import { readFileSync } from 'node:fs';
-const section = readFileSync('CHANGELOG.md', 'utf8').split(/^## /m)[1];
-if (!section) throw new Error('Missing release section.');
-console.log(section.slice(section.indexOf('\n')).trim());
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { releaseSection } from './release-metadata.js';
+const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const { version } = JSON.parse(readFileSync(join(root, 'manifest.json')));
+console.log(releaseSection(readFileSync(join(root, 'CHANGELOG.md'), 'utf8'), version).notes);
