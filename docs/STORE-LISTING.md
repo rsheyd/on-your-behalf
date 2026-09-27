@@ -35,13 +35,13 @@ Complete the dashboard's data categories based on actual handling and transmissi
 
 ## Reviewer instructions
 
-1. Install OYB and open settings. Use the dedicated provider test key and model supplied separately in the private dashboard reviewer instructions. There is no OYB login. Reviewer access is pending until Roman supplies that key; do not imply it is already provided.
+1. Install OYB and open settings. Select Google Gemini and expand Advanced settings to set the model to `gemini-3.8-flash`. Use the dedicated test key supplied separately in the private dashboard reviewer instructions, then click Test connection and save settings. There is no OYB login. The dedicated key passed OYB’s connection test on September 27, 2026 with `gemini-3.8-flash`. The key still needs to be entered in the private dashboard field. OYB 0.6.4 defaults to `gemini-2.5-flash`, which this tester account cannot use; the explicit model override is required.
 2. Save a synthetic profile such as: “My name is Alex Example. I am a software engineer with five years of experience. My preferred language is English.” Never use private developer profile material.
 3. Open a simple form with name, occupation, and language fields. For a reproducible fixture, serve this repository with `python3 -m http.server 8765` and open `http://localhost:8765/test/manual-form.html`.
 4. Open OYB, select the intended section, and start a fill. Review the answers and missing-information report. Confirm that sensitive fields stay empty and submit/navigation counters stay zero.
 5. Inspect supporting-file import, source toggles, and paused-run continuation if needed. Invalid or unavailable provider access should produce a clear error.
 
-Recommended access plan: supply a dedicated test credential from a separate provider project through the private reviewer instructions, with minimal practical permissions/usage limits and monitoring. Supply the provider and an available model alongside the key; revoke the credential after review. Do not rely on reviewers creating and funding their own API accounts. Roman must provision and enter this credential privately before submission. Do not put credentials in this repository, public listing, screenshots, or release notes. Confirm that the reviewer has a usable test path before submitting.
+Recommended access plan: supply a dedicated test credential from a separate provider project through the private reviewer instructions, with minimal practical permissions/usage limits and monitoring. Supply the provider and an available model alongside the key; revoke the credential after review. Do not rely on reviewers creating and funding their own API accounts. Roman has provisioned and tested the credential; it must still be entered privately in the dashboard before submission. Do not put credentials in this repository, public listing, screenshots, or release notes. Confirm that the reviewer has a usable test path before submitting.
 
 ## Assets and submission checklist
 
@@ -57,4 +57,4 @@ References: [Chrome publishing guide](https://developer.chrome.com/docs/webstore
 
 ## Private reviewer field template
 
-Provide the following directly in the dashboard, replacing placeholders there only: “Select [PROVIDER] in OYB settings. Use model [MODEL] and the dedicated review API key [KEY]. Save settings, then follow the synthetic-profile steps above. This credential is provided only for reviewing OYB.” Verify the dedicated key/model combination before sending it; never commit the filled template.
+Provide the following directly in the dashboard, replacing placeholders there only: “Select Google Gemini in OYB settings. Expand Advanced settings and set the model to gemini-3.8-flash. Use the dedicated review API key [KEY]. Save settings, then follow the synthetic-profile steps above. This credential is provided only for reviewing OYB.” Verify the dedicated key/model combination before sending it; never commit the filled template.
