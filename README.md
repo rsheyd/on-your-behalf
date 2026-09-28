@@ -122,7 +122,11 @@ This prints validated suggestions as JSON; it does not fill a document. Review a
 
 The command `oyb fill document.pdf` alone returns “OYB needs a reviewed field map” because the CLI cannot yet detect and create trustworthy fields in an arbitrary PDF. For the Mentor Packet experiment in this checkout, the prepared PDF and its reviewed page-one map are in the Git-ignored `roman-only/pdf-experiments/mentor-packet/` directory. Install Python's `pypdf` package if needed, then run from the repository root:
 
-To list the fields already present in that prepared PDF without using your profile or contacting an AI provider, run `node bin/oyb.js inspect roman-only/pdf-experiments/mentor-packet/mentor-packet-draft-fields.pdf`. This prints field IDs, types, page numbers, and PDF rectangles as JSON. It does not propose labels, create fields, approve a map, or change the PDF.
+To list the fields already present in that prepared PDF without using your profile or contacting an AI provider, run `node bin/oyb.js inspect roman-only/pdf-experiments/mentor-packet/mentor-packet-draft-fields.pdf`. This prints field IDs, types, page numbers, and PDF rectangles as JSON without changing the PDF.
+
+To generate label guesses and a visual review report, install `pdfplumber`, Pillow, Tesseract, and Poppler, then run `node bin/oyb.js inspect prepared.pdf --review-dir new-review-directory`. Open `new-review-directory/review.html` and check every candidate against the page image. All candidates start unreviewed; edit labels in `review.json` as needed. For scanned pages like the Mentor Packet, inspection uses OCR. The review directory must not exist yet, and its images and text may contain private form information.
+
+After reviewing a small set of text fields, explicitly select their IDs with `node bin/oyb.js approve-fields prepared.pdf --review new-review-directory/review.json --fields id1,id2 --output reviewed.json`. The command checks the PDF hash, field type, page, rectangle, and sensitive-field policy before creating the exact format required by `oyb fill`. It will not approve every field automatically. Choose a new output filename; existing maps are not overwritten.
 
 ```bash
 node bin/oyb.js fill roman-only/pdf-experiments/mentor-packet/mentor-packet-draft-fields.pdf \

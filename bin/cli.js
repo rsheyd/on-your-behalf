@@ -4,6 +4,7 @@ import { isSensitiveField } from "../src/form-core.js";
 import { runPdfFill } from "./pdf-fill.js";
 import { importProfile, loadProfile } from "./profile-store.js";
 import { inspectPdf } from "./pdf-inspect.js";
+import { approvePdfFields, createPdfReview } from "./pdf-review.js";
 
 const KEY_VARIABLES = Object.freeze({ openai: "OPENAI_API_KEY", anthropic: "ANTHROPIC_API_KEY", gemini: "GEMINI_API_KEY" });
 const HELP = `On Your Behalf CLI (early preview)
@@ -11,11 +12,14 @@ const HELP = `On Your Behalf CLI (early preview)
 Usage:
   oyb import-profile export.zip
   oyb inspect prepared.pdf
+  oyb inspect prepared.pdf --review-dir new-directory
+  oyb approve-fields prepared.pdf --review review.json --fields id1,id2 --output reviewed.json
   oyb preview-answers --fields form.json --provider openai|anthropic|gemini [--profile profile.txt] [--model model]
   oyb fill prepared.pdf --field-map reviewed.json --provider openai|anthropic|gemini --output filled.pdf [--profile profile.txt] [--model model]
 
 The preview-answers command prints validated answer suggestions as JSON. It does not fill a form.
 The inspect command prints existing PDF field IDs, types, pages, and rectangles as JSON. It does not change the PDF.
+Use --review-dir to generate unreviewed label guesses and an HTML report. approve-fields exports only explicitly selected text fields.
 Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY for the selected provider.
 An imported profile is used by default. --profile selects a text file for that run instead.
 PDF filling requires an existing fillable PDF and a manually reviewed field map.`;
@@ -45,7 +49,7 @@ function formFromJson(text) {
   return { page: form.page && typeof form.page === "object" ? form.page : {}, fields: form.fields };
 }
 
-export async function runCli(args, { env = process.env, readText = path => readFile(path, "utf8"), analyze = analyzeForm, fillPdf = runPdfFill, inspect = inspectPdf, importSources = importProfile, loadSources = loadProfile, out = text => process.stdout.write(text), err = text => process.stderr.write(text) } = {}) {
+export async function runCli(args, { env = process.env, readText = path => readFile(path, "utf8"), analyze = analyzeForm, fillPdf = runPdfFill, inspect = inspectPdf, createReview = createPdfReview, approveFields = approvePdfFields, importSources = importProfile, loadSources = loadProfile, out = text => process.stdout.write(text), err = text => process.stderr.write(text) } = {}) {
   try {
     if (!args.length || args[0] === "--help" || args[0] === "help") { out(`${HELP}\n`); return 0; }
     if (args[0] === "import-profile") {
@@ -55,8 +59,17 @@ export async function runCli(args, { env = process.env, readText = path => readF
       return 0;
     }
     if (args[0] === "inspect") {
-      if (args.length !== 2 || !/\.pdf$/i.test(args[1])) throw new Error("Usage: oyb inspect prepared.pdf");
-      out(`${JSON.stringify(await inspect(args[1]), null, 2)}\n`);
+      if (!/\.pdf$/i.test(args[1] || "")) throw new Error("Usage: oyb inspect prepared.pdf [--review-dir new-directory]");
+      if (args.length === 2) out(`${JSON.stringify(await inspect(args[1]), null, 2)}\n`);
+      else if (args.length === 4 && args[2] === "--review-dir" && args[3]) out(`${JSON.stringify(await createReview(args[1], args[3]), null, 2)}\n`);
+      else throw new Error("Usage: oyb inspect prepared.pdf [--review-dir new-directory]");
+      return 0;
+    }
+    if (args[0] === "approve-fields") {
+      if (!/\.pdf$/i.test(args[1] || "")) throw new Error("Usage: oyb approve-fields prepared.pdf --review review.json --fields id1,id2 --output reviewed.json");
+      const options = parseOptions(args.slice(2), ["--review", "--fields", "--output"]);
+      const result = await approveFields({ inputPath: args[1], reviewPath: options["--review"], selectedIds: options["--fields"], outputPath: options["--output"] });
+      out(`${JSON.stringify(result, null, 2)}\n`);
       return 0;
     }
     if (args[0] === "fill") {

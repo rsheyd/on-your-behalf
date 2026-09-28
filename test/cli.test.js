@@ -56,6 +56,16 @@ test("CLI inspect returns a read-only PDF field inventory without profile or API
   assert.equal(JSON.parse(output.join("")).fields[0].placements[0].page, 1);
 });
 
+test("CLI routes PDF review and explicit field approval without provider access", async () => {
+  const { dependencies, output } = harness();
+  dependencies.createReview = async (input, directory) => ({ input, directory, fields: 2 });
+  dependencies.approveFields = async options => ({ approved: options.selectedIds.split(",").length, output: options.outputPath });
+  assert.equal(await runCli(["inspect", "prepared.pdf", "--review-dir", "review"], dependencies), 0);
+  assert.equal(JSON.parse(output.pop()).directory, "review");
+  assert.equal(await runCli(["approve-fields", "prepared.pdf", "--review", "review/review.json", "--fields", "first,last", "--output", "approved.json"], dependencies), 0);
+  assert.equal(JSON.parse(output.pop()).approved, 2);
+});
+
 test("CLI routes a reviewed PDF fill with the selected environment key", async () => {
   const { dependencies, output } = harness({ env: { OPENAI_API_KEY: "private-test-key" } });
   let payload;
