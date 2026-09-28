@@ -2,6 +2,7 @@
 
 ## 0.6.1 — Unreleased
 
+- Added a read-only `oyb inspect` field inventory for PDFs with existing AcroForm fields.
 - Renamed the CLI answer preview command to `oyb preview-answers`; `oyb suggest` remains an alias.
 - Added a saved-profile ZIP export in extension Settings and `oyb import-profile` for private CLI storage; CLI suggestions and PDF fills now use the imported profile and enabled supporting documents by default.
 - Added an early Node CLI that generates reviewed suggestions from a text profile and a JSON field list using a provider API key from an environment variable.

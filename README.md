@@ -122,6 +122,8 @@ This prints validated suggestions as JSON; it does not fill a document. Review a
 
 The command `oyb fill document.pdf` alone returns “OYB needs a reviewed field map” because the CLI cannot yet detect and create trustworthy fields in an arbitrary PDF. For the Mentor Packet experiment in this checkout, the prepared PDF and its reviewed page-one map are in the Git-ignored `roman-only/pdf-experiments/mentor-packet/` directory. Install Python's `pypdf` package if needed, then run from the repository root:
 
+To list the fields already present in that prepared PDF without using your profile or contacting an AI provider, run `node bin/oyb.js inspect roman-only/pdf-experiments/mentor-packet/mentor-packet-draft-fields.pdf`. This prints field IDs, types, page numbers, and PDF rectangles as JSON. It does not propose labels, create fields, approve a map, or change the PDF.
+
 ```bash
 node bin/oyb.js fill roman-only/pdf-experiments/mentor-packet/mentor-packet-draft-fields.pdf \
   --field-map roman-only/pdf-experiments/mentor-packet/reviewed-page-1-fields.json \

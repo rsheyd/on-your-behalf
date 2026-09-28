@@ -3,16 +3,19 @@ import { analyzeForm } from "../src/answer-engine.js";
 import { isSensitiveField } from "../src/form-core.js";
 import { runPdfFill } from "./pdf-fill.js";
 import { importProfile, loadProfile } from "./profile-store.js";
+import { inspectPdf } from "./pdf-inspect.js";
 
 const KEY_VARIABLES = Object.freeze({ openai: "OPENAI_API_KEY", anthropic: "ANTHROPIC_API_KEY", gemini: "GEMINI_API_KEY" });
 const HELP = `On Your Behalf CLI (early preview)
 
 Usage:
   oyb import-profile export.zip
+  oyb inspect prepared.pdf
   oyb preview-answers --fields form.json --provider openai|anthropic|gemini [--profile profile.txt] [--model model]
   oyb fill prepared.pdf --field-map reviewed.json --provider openai|anthropic|gemini --output filled.pdf [--profile profile.txt] [--model model]
 
 The preview-answers command prints validated answer suggestions as JSON. It does not fill a form.
+The inspect command prints existing PDF field IDs, types, pages, and rectangles as JSON. It does not change the PDF.
 Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY for the selected provider.
 An imported profile is used by default. --profile selects a text file for that run instead.
 PDF filling requires an existing fillable PDF and a manually reviewed field map.`;
@@ -42,13 +45,18 @@ function formFromJson(text) {
   return { page: form.page && typeof form.page === "object" ? form.page : {}, fields: form.fields };
 }
 
-export async function runCli(args, { env = process.env, readText = path => readFile(path, "utf8"), analyze = analyzeForm, fillPdf = runPdfFill, importSources = importProfile, loadSources = loadProfile, out = text => process.stdout.write(text), err = text => process.stderr.write(text) } = {}) {
+export async function runCli(args, { env = process.env, readText = path => readFile(path, "utf8"), analyze = analyzeForm, fillPdf = runPdfFill, inspect = inspectPdf, importSources = importProfile, loadSources = loadProfile, out = text => process.stdout.write(text), err = text => process.stderr.write(text) } = {}) {
   try {
     if (!args.length || args[0] === "--help" || args[0] === "help") { out(`${HELP}\n`); return 0; }
     if (args[0] === "import-profile") {
       if (args.length !== 2 || !/\.zip$/i.test(args[1])) throw new Error("Usage: oyb import-profile export.zip");
       const result = await importSources(args[1]);
       out(`Imported profile and ${result.supportingDocuments} supporting documents (${result.enabledDocuments} enabled) to ${result.location}.\n`);
+      return 0;
+    }
+    if (args[0] === "inspect") {
+      if (args.length !== 2 || !/\.pdf$/i.test(args[1])) throw new Error("Usage: oyb inspect prepared.pdf");
+      out(`${JSON.stringify(await inspect(args[1]), null, 2)}\n`);
       return 0;
     }
     if (args[0] === "fill") {

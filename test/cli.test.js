@@ -47,6 +47,15 @@ test("CLI fill reports unsupported PDF operation without reading the file or usi
   assert.equal(calls.length, 0);
 });
 
+test("CLI inspect returns a read-only PDF field inventory without profile or API key", async () => {
+  const { dependencies, output } = harness();
+  let path;
+  dependencies.inspect = async input => { path = input; return { pages: 2, fieldCount: 1, fields: [{ fieldId: "name", type: "text", placements: [{ page: 1, pdfRect: [10, 20, 100, 40] }] }] }; };
+  assert.equal(await runCli(["inspect", "prepared.pdf"], dependencies), 0);
+  assert.equal(path, "prepared.pdf");
+  assert.equal(JSON.parse(output.join("")).fields[0].placements[0].page, 1);
+});
+
 test("CLI routes a reviewed PDF fill with the selected environment key", async () => {
   const { dependencies, output } = harness({ env: { OPENAI_API_KEY: "private-test-key" } });
   let payload;
