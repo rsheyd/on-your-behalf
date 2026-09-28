@@ -25,6 +25,8 @@ Then open `http://localhost:8765/test/manual-form.html`.
 
 The production fill loop can also be tested without Chrome or an unpacked extension. `npm test` runs it against an in-memory dynamic employment fixture. For the opt-in private provider comparison, run `npm run test:employment:live` with `OPENAI_VALERIA_API_KEY` available; it sends a bounded excerpt of `roman-only/linkedin-profile.md` to OpenAI and checks the exact resulting rows without printing the credential.
 
+The CLI preview runs with `node bin/oyb.js --help`. Its `suggest` command takes a plain-text profile and a JSON field list, then uses the shared answer engine; its `fill` command reports that PDF support is pending. CLI keys come from provider-specific environment variables and are not read from Chrome storage. The CLI has no PDF runtime dependencies yet, and `bin/` is excluded from the extension ZIP.
+
 For a browser-only failure, use **Copy last run** in the popup's Run diagnostics section. The newest ten traces stay in extension-local storage and include run settings, compact field/group snapshots, AI suggestions, applied or failed field IDs, row actions, and the stopping reason. They exclude API keys and full profile or supporting-document contents, but may contain form answers; clear the history when it is no longer needed.
 
 Repeated-section tests deliberately include non-contiguous raw control indexes and browser-like checkbox rescans. Application-generated numeric suffixes are treated as stable identity only; record positions follow visual row order.

@@ -1,5 +1,4 @@
-import { buildPrompt, parseCollectionPlan, parseFormAnalysis } from "./prompt.js";
-import { generateSuggestions } from "./providers.js";
+import { analyzeForm } from "./answer-engine.js";
 import { enabledSupportingDocuments } from "./supporting-documents.js";
 import { actionsInScope, fieldsInScope } from "./form-scope.js";
 import { reconcileCheckpointForResume } from "./fill-operation.js";
@@ -266,11 +265,5 @@ async function handleGenerate({ page, fields, recordContext = [], actions = [], 
   const { profile = "", supportingDocuments = [], provider = "", apiKeys = {}, model = "" } = await chrome.storage.local.get(["profile", "supportingDocuments", "provider", "apiKeys", "model"]);
   const selectedProfile = includeProfile ? profile.trim() : "";
   const selectedSupportingDocuments = includeSupportingFiles ? enabledSupportingDocuments(supportingDocuments) : [];
-  const selectedContext = String(formContext || "").trim();
-  if (!selectedProfile && !selectedSupportingDocuments.length && !selectedContext) throw new Error("Include your saved profile or supporting files, or add context for this form.");
-  const prompt = buildPrompt({ profile: selectedProfile, supportingDocuments: selectedSupportingDocuments, formContext: selectedContext, answeringPosture, assumeAffirmative, allowAssumptions, includeConsequentialAssumptions, replaceExisting, planCollection, page, fields, recordContext, actions });
-  const text = await generateSuggestions({ provider, apiKey: apiKeys[provider] || "", model, prompt, signal });
-  if (!planCollection) return parseFormAnalysis(text, fields, actions);
-  const parsedPlan = parseCollectionPlan(text, fields);
-  return { plan: parsedPlan.records, planInvalid: parsedPlan.invalid, suggestions: [], unresolved: [], actions: [] };
+  return analyzeForm({ profile: selectedProfile, supportingDocuments: selectedSupportingDocuments, formContext, provider, apiKey: apiKeys[provider] || "", model, answeringPosture, assumeAffirmative, allowAssumptions, includeConsequentialAssumptions, replaceExisting, planCollection, page, fields, recordContext, actions, signal });
 }

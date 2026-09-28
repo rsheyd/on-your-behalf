@@ -11,6 +11,7 @@ Open a form, click the extension, choose which information to include, and selec
 - [Features](#features)
 - [Screenshots](#screenshots)
 - [Install locally in Chrome](#install-locally-in-chrome)
+- [CLI preview](#cli-preview)
 - [Privacy and security model](#privacy-and-security-model)
 - [Test](#test)
 - [Product roadmap](#product-roadmap)
@@ -87,6 +88,14 @@ After changing source files, click the extension's reload button on `chrome://ex
 
 The popup footer shows the extension version and source-update time so you can confirm that Chrome loaded the expected development build.
 
+## CLI preview
+
+The early CLI shares OYB's prompt, provider request, and answer validation logic with the extension. It currently accepts a text profile and a JSON list of already identified form fields, then prints validated suggestions for review. It does not fill a document or read Chrome settings.
+
+Create a `form.json` containing a page description and fields, for example `{"page":{"title":"Example form"},"fields":[{"fieldId":"name","kind":"input","label":"Full name"}]}`. Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` in your shell for the provider you choose, then run `node bin/oyb.js suggest --profile profile.txt --fields form.json --provider openai`. Use `--model` to override that provider's default model. The CLI reads the key from the environment for each request; it does not save the key or profile. It sends the profile and field descriptions to the selected AI provider, and prints answers to standard output, so review where output is redirected.
+
+`node bin/oyb.js fill document.pdf` currently reports that PDF filling is unavailable and does not change the file. PDF detection, field extraction, and writing are future CLI steps.
+
 ## Privacy and security model
 
 The extension has no server of its own. Your profile and provider-specific API keys are stored using `chrome.storage.local`, and a form request goes directly from the extension to the provider you selected. Chrome extension-local storage is isolated from normal webpages, but it is not a dedicated password manager or hardware-backed secret store.
@@ -126,6 +135,8 @@ Completed onboarding direction and the remaining profile, portability, and first
 
 - `manifest.json` — Manifest V3 extension configuration and version.
 - `src/background.js` — checkpointed fill-operation and AI request orchestration.
+- `src/answer-engine.js` — shared profile-to-validated-suggestions operation.
+- `bin/` — Node CLI entry point and argument handling; excluded from the extension package.
 - `src/content.js` — page scanning and filling.
 - `src/answer-policy.js` — canonical compact AI answering policy.
 - `src/form-core.js`, `src/form-state.js`, `src/prompt.js`, `src/providers.js`, `src/document-import.js`, and `src/supporting-documents.js` — standalone form, scan-state, prompt, parsing, provider, document-import, and supporting-file logic.
