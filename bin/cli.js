@@ -9,10 +9,10 @@ const HELP = `On Your Behalf CLI (early preview)
 
 Usage:
   oyb import-profile export.zip
-  oyb suggest --fields form.json --provider openai|anthropic|gemini [--profile profile.txt] [--model model]
+  oyb preview-answers --fields form.json --provider openai|anthropic|gemini [--profile profile.txt] [--model model]
   oyb fill prepared.pdf --field-map reviewed.json --provider openai|anthropic|gemini --output filled.pdf [--profile profile.txt] [--model model]
 
-The suggest command prints validated answer suggestions as JSON. It does not fill a form.
+The preview-answers command prints validated answer suggestions as JSON. It does not fill a form.
 Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY for the selected provider.
 An imported profile is used by default. --profile selects a text file for that run instead.
 PDF filling requires an existing fillable PDF and a manually reviewed field map.`;
@@ -66,7 +66,7 @@ export async function runCli(args, { env = process.env, readText = path => readF
       out(`${JSON.stringify(result, null, 2)}\n`);
       return 0;
     }
-    if (args[0] !== "suggest") throw new Error(`Unknown command: ${args[0]}. Run oyb --help for usage.`);
+    if (args[0] !== "preview-answers" && args[0] !== "suggest") throw new Error(`Unknown command: ${args[0]}. Run oyb --help for usage.`);
     const options = parseOptions(args.slice(1), ["--fields", "--provider"]);
     const provider = options["--provider"];
     const keyVariable = KEY_VARIABLES[provider];

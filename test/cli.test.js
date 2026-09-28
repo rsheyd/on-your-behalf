@@ -16,9 +16,9 @@ function harness({ env = {}, form = { page: { title: "Example" }, fields: [{ fie
   return { dependencies, output, errors, calls };
 }
 
-test("CLI suggestion command uses the selected environment key and shared engine", async () => {
+test("CLI preview-answers command uses the selected environment key and shared engine", async () => {
   const { dependencies, output, calls } = harness({ env: { OPENAI_API_KEY: "private-test-key" } });
-  const code = await runCli(["suggest", "--profile", "profile.txt", "--fields", "form.json", "--provider", "openai"], dependencies);
+  const code = await runCli(["preview-answers", "--profile", "profile.txt", "--fields", "form.json", "--provider", "openai"], dependencies);
   assert.equal(code, 0);
   assert.equal(calls[0].apiKey, "private-test-key");
   assert.equal(calls[0].fields[0].label, "Name");
@@ -28,14 +28,14 @@ test("CLI suggestion command uses the selected environment key and shared engine
 test("CLI filters sensitive fields before contacting the provider", async () => {
   const form = { fields: [{ fieldId: "password", kind: "input", inputType: "password", label: "Password" }, { fieldId: "name", kind: "input", label: "Name" }] };
   const { dependencies, output, calls } = harness({ env: { OPENAI_API_KEY: "key" }, form });
-  assert.equal(await runCli(["suggest", "--profile", "profile.txt", "--fields", "form.json", "--provider", "openai"], dependencies), 0);
+  assert.equal(await runCli(["preview-answers", "--profile", "profile.txt", "--fields", "form.json", "--provider", "openai"], dependencies), 0);
   assert.deepEqual(calls[0].fields.map(field => field.fieldId), ["name"]);
   assert.deepEqual(JSON.parse(output.join("")).skipped, [{ fieldId: "password", reason: "sensitive_field" }]);
 });
 
 test("CLI requires its provider key without making a request", async () => {
   const { dependencies, errors, calls } = harness();
-  assert.equal(await runCli(["suggest", "--profile", "profile.txt", "--fields", "form.json", "--provider", "gemini"], dependencies), 1);
+  assert.equal(await runCli(["preview-answers", "--profile", "profile.txt", "--fields", "form.json", "--provider", "gemini"], dependencies), 1);
   assert.match(errors.join(""), /GEMINI_API_KEY/);
   assert.equal(calls.length, 0);
 });
@@ -62,7 +62,7 @@ test("CLI routes a reviewed PDF fill with the selected environment key", async (
 test("CLI uses imported sources by default for suggestions and PDF filling", async () => {
   const { dependencies, calls } = harness({ env: { OPENAI_API_KEY: "test-key" } });
   dependencies.loadSources = async () => ({ profile: "Synthetic imported profile", supportingDocuments: [{ id: "doc", name: "Reference", text: "Synthetic reference" }] });
-  assert.equal(await runCli(["suggest", "--fields", "form.json", "--provider", "openai"], dependencies), 0);
+  assert.equal(await runCli(["preview-answers", "--fields", "form.json", "--provider", "openai"], dependencies), 0);
   assert.equal(calls[0].profile, "Synthetic imported profile");
   assert.equal(calls[0].supportingDocuments.length, 1);
   let fillPayload;
@@ -73,6 +73,12 @@ test("CLI uses imported sources by default for suggestions and PDF filling", asy
   assert.equal(await runCli(["fill", "prepared.pdf", "--field-map", "reviewed.json", "--provider", "openai", "--output", "other.pdf", "--profile", "profile.txt"], dependencies), 0);
   assert.equal(fillPayload.profilePath, "profile.txt");
   assert.equal(fillPayload.supportingDocuments, undefined);
+});
+
+test("CLI keeps suggest as an alias for existing scripts", async () => {
+  const { dependencies, calls } = harness({ env: { OPENAI_API_KEY: "test-key" } });
+  assert.equal(await runCli(["suggest", "--profile", "profile.txt", "--fields", "form.json", "--provider", "openai"], dependencies), 0);
+  assert.equal(calls.length, 1);
 });
 
 test("CLI imports an export without printing its contents", async () => {
