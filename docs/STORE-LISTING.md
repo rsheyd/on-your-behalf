@@ -48,7 +48,7 @@ Recommended access plan: supply a dedicated test credential from a separate prov
 - Fresh submission assets are ready in store-assets/: three 1280×800 PNG screenshots and the required 440×280 small promotional tile. See store-assets/README.md for provenance and order. The listing icon is icons/icon-128.png.
 - Roman reported completing the extracted-ZIP smoke test on September 27, 2026 for version 0.6.4. Version 0.6.0 changes the Gemini default; the earlier smoke test does not certify this newer ZIP. A focused check of Gemini setup and a synthetic fill is required before submission.
 - Run `npm test`, `npm run check`, and `npm run package`.
-- For future releases, extract the generated ZIP into a fresh directory, load it unpacked in Chrome, and complete the relevant DEVELOPMENT.md smoke checks. Check service-worker errors, imports, provider calls, source toggles, sensitive-field skipping, and zero submit/navigation attempts.
+- For future releases, extract the generated ZIP into a fresh directory, load it unpacked in Chrome, and complete the relevant `docs/DEVELOPMENT.md` smoke checks. Check service-worker errors, imports, provider calls, source toggles, sensitive-field skipping, and zero submit/navigation attempts.
 - Commit release preparation, preview with `npm run release -- --dry-run`, and publish the GitHub release with `npm run release` when ready.
 - Upload the exact verified ZIP to the developer dashboard; complete listing, privacy declarations, permission justifications, reviewer access, and graphics. Save the assigned extension ID here.
 - Submit for review manually. Record approved/published store version separately from the GitHub release. Future uploaded versions must increase beyond the version already uploaded.

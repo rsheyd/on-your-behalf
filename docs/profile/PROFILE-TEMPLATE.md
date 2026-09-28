@@ -11,7 +11,7 @@ To import from Google Docs:
 3. Under **Your profile**, choose the downloaded `.docx` file.
 4. Review the imported text, make any needed edits, and select **Save settings**.
 
-Looking for more ideas? See the [extended profile field guide](https://github.com/rsheyd/on-your-behalf/blob/main/PROFILE-FIELD-GUIDE.md).
+Looking for more ideas? See the [extended profile field guide](PROFILE-FIELD-GUIDE.md).
 
 ---
 

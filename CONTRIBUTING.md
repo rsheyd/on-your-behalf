@@ -30,7 +30,7 @@ npm test
 npm run check
 ```
 
-Load the repository directory as an unpacked extension from `chrome://extensions`, and follow the manual test loop in [`DEVELOPMENT.md`](DEVELOPMENT.md). After changing extension files, reload the extension before retesting.
+Load the repository directory as an unpacked extension from `chrome://extensions`, and follow the manual test loop in [`DEVELOPMENT.md`](docs/DEVELOPMENT.md). After changing extension files, reload the extension before retesting.
 
 ## Tests and fixtures
 
@@ -43,7 +43,7 @@ npm test
 npm run check
 ```
 
-Complete the relevant manual smoke checks from [`DEVELOPMENT.md`](DEVELOPMENT.md), especially for changes to scanning, field filling, browser events, provider requests, imports, or settings.
+Complete the relevant manual smoke checks from [`DEVELOPMENT.md`](docs/DEVELOPMENT.md), especially for changes to scanning, field filling, browser events, provider requests, imports, or settings.
 
 ## Versions and changelog
 

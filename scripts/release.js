@@ -19,7 +19,7 @@ if (args.includes('--dry-run')) {
 } else {
   if (git('status', '--porcelain')) throw new Error('Commit working-tree changes before publishing.');
   const existingTags = git('tag', '--list', `v${version}`);
-  if (existingTags) throw new Error(`v${version} already exists. See DEVELOPMENT.md for interrupted-release recovery.`);
+  if (existingTags) throw new Error(`v${version} already exists. See docs/DEVELOPMENT.md for interrupted-release recovery.`);
   process.env.GITHUB_TOKEN ||= execFileSync('gh', ['auth', 'token'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }).trim();
   const { default: release } = await import('release-it');
   await release({ increment: version, ci: true });

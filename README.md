@@ -74,7 +74,7 @@ Provider settings guide users through getting, testing, and safely storing their
 9. Optionally add context, choose which information to include, select a section if desired, and choose **Scan and fill this page**.
 10. Review every outlined answer—especially amber inferred answers—before submitting the form yourself.
 
-In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. You can also add up to 10 supporting files that remain separate from the editable profile; enable or disable each file in Settings and choose whether to include the enabled set for each fill. [`PROFILE-TEMPLATE.md`](PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported profile text and supporting files may be sent to your selected AI provider and are not saved until you choose **Save settings**.
+In Settings, you can import any profile-relevant document in a supported format instead of entering the profile by hand. You can also add up to 10 supporting files that remain separate from the editable profile; enable or disable each file in Settings and choose whether to include the enabled set for each fill. [`PROFILE-TEMPLATE.md`](docs/profile/PROFILE-TEMPLATE.md) provides a short outline that can be copied into Google Docs, completed, downloaded as a DOCX file, and imported into OYB. The [`PROFILE-FIELD-GUIDE.md`](docs/profile/PROFILE-FIELD-GUIDE.md) extended guide offers more ideas without making them part of the default template. DOCX, Markdown, and plain text preserve structure most reliably. Text-based PDFs are supported, but multi-column layouts may extract out of order; scanned PDFs are not supported. Imported profile text and supporting files may be sent to your selected AI provider and are not saved until you choose **Save settings**.
 
 After filling, the popup lists factual answers missing from your profile and questions that require a decision. **Assume yes/agreement for acknowledgements and consent** can authorize affirmative routine choices. **Allow reasonable assumptions** lets OYB fill likely answers that do not contradict your information; inferred answers receive an amber outline. A nested option can extend assumptions to sensitive or consequential declarations. Use **Open profile settings** to add durable facts.
 
@@ -162,7 +162,7 @@ npm test
 npm run check
 ```
 
-See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the manual Chrome test loop.
+See [`DEVELOPMENT.md`](docs/DEVELOPMENT.md) for the manual Chrome test loop.
 
 ## Product roadmap
 
@@ -187,8 +187,8 @@ Completed onboarding direction and the remaining profile, portability, and first
 - `test/*.test.js` — unit tests for standalone logic.
 - `test/manual-form.html` — a manual compatibility fixture.
 - `test/long-form.html` — a multi-section fixture for adaptive batching and resumable limits.
-- `PROFILE-TEMPLATE.md` — short Google Docs-friendly starter profile.
-- `PROFILE-FIELD-GUIDE.md` — optional extended list of profile fields and migration guidance.
+- `docs/profile/PROFILE-TEMPLATE.md` — short Google Docs-friendly starter profile.
+- `docs/profile/PROFILE-FIELD-GUIDE.md` — optional extended list of profile fields and migration guidance.
 
 ## Contributing and security
 
