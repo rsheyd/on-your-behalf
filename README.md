@@ -90,11 +90,48 @@ The popup footer shows the extension version and source-update time so you can c
 
 ## CLI preview
 
-The early CLI shares OYB's prompt, provider request, and answer validation logic with the extension. In extension Settings, click **Export saved profile for CLI** after saving your changes. Keep the downloaded ZIP private: it contains your saved profile and the extracted text of your supporting documents, including disabled ones. It excludes API keys and temporary form context. Run `node bin/oyb.js import-profile oyb-profile-export.zip` to validate and copy the sources into OYB's private application-data directory. Importing again replaces the previous CLI copy; it does not change the extension's settings.
+The CLI is an early preview. Importing a profile makes its saved text and enabled supporting documents available to CLI commands, but it does **not** prepare a PDF for filling. PDF filling currently requires a fillable PDF and a separate, manually reviewed field map made for that exact PDF.
 
-Create a `form.json` containing a page description and fields, for example `{"page":{"title":"Example form"},"fields":[{"fieldId":"name","kind":"input","label":"Full name"}]}`. Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` in your shell for the provider you choose, then run `node bin/oyb.js preview-answers --fields form.json --provider openai`. Use `--model` to override that provider's default model. By default, the CLI sends the imported profile and enabled supporting documents to the selected provider with the field descriptions. Pass `--profile profile.txt` for a run that should use only that text file and no imported supporting documents. The CLI reads the key from the environment for each request; it does not store the key. Suggestions print to standard output, so review where output is redirected.
+### Import your saved profile
 
-For an already prepared AcroForm PDF, install Python's `pypdf` package and create a reviewed JSON field map with the source PDF's SHA-256 hash, a page description, and approved text fields. Each mapped field needs a `fieldId`, `label`, `kind: "input"`, `inputType: "text"`, one-based `page`, `pdfRect` coordinates, and `reviewStatus: "approved"`. Run `node bin/oyb.js fill prepared.pdf --field-map reviewed.json --provider openai --output filled.pdf`. The CLI writes a new PDF and checks stored values and visible field appearances; inspect the result before using it. It uses the imported profile and enabled supporting documents by default; `--profile profile.txt` selects a smaller per-run profile instead. A bare `fill document.pdf` reports that a reviewed map is required. Automatic PDF detection, OCR, field creation, checkboxes, and signatures remain future steps.
+In extension Settings, save your changes and click **Export saved profile for CLI**. Keep the downloaded ZIP private: it contains your saved profile and the extracted text of all supporting documents, including disabled ones. It excludes API keys and temporary form context. From the repository root, import the ZIP using its actual download path:
+
+```bash
+node bin/oyb.js import-profile ~/Downloads/oyb-profile-export.zip
+```
+
+The CLI validates the ZIP and keeps a copy in OYB's private application-data directory. Importing again replaces that CLI copy without changing extension settings. Set `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `GEMINI_API_KEY` in your shell for the provider you plan to use; API keys are not exported or stored by the CLI.
+
+### Preview answers without changing a form
+
+Create a `form.json` containing a page description and identified fields, for example:
+
+```json
+{"page":{"title":"Example form"},"fields":[{"fieldId":"name","kind":"input","label":"Full name"}]}
+```
+
+Then run:
+
+```bash
+node bin/oyb.js preview-answers --fields form.json --provider openai
+```
+
+This prints validated suggestions as JSON; it does not fill a document. Review any output you redirect to a file because it can contain personal answers.
+
+### Fill a prepared PDF
+
+The command `oyb fill document.pdf` alone returns “OYB needs a reviewed field map” because the CLI cannot yet detect and create trustworthy fields in an arbitrary PDF. For the Mentor Packet experiment in this checkout, the prepared PDF and its reviewed page-one map are in the Git-ignored `roman-only/pdf-experiments/mentor-packet/` directory. Install Python's `pypdf` package if needed, then run from the repository root:
+
+```bash
+node bin/oyb.js fill roman-only/pdf-experiments/mentor-packet/mentor-packet-draft-fields.pdf \
+  --field-map roman-only/pdf-experiments/mentor-packet/reviewed-page-1-fields.json \
+  --provider openai \
+  --output roman-only/pdf-experiments/mentor-packet/mentor-packet-page-1-new-fill.pdf
+```
+
+Choose an output path that does not already exist. This map covers only five reviewed text boxes on page one; the rest of the 19-page packet remains unfilled. The map is tied to the prepared PDF's SHA-256 hash, so it will not work with the original download or a different PDF. OYB writes a new PDF, checks stored values and field appearances, and leaves the original untouched. Open and review the output before using it. Other PDFs need their own prepared fields and reviewed map; automatic PDF detection, OCR, field creation, checkboxes, and signatures remain future work.
+
+By default, `preview-answers` and `fill` send the imported profile and enabled supporting documents, along with field descriptions, directly to the selected AI provider. Add `--profile profile.txt` to either command to use only that text file for one run. Use `--model` to override the provider's default model.
 
 ## Privacy and security model
 
