@@ -4,7 +4,8 @@
 
 - Added an early Node CLI that generates reviewed suggestions from a text profile and a JSON field list using a provider API key from an environment variable.
 - Shared prompt, provider request, and response validation orchestration between the CLI and Chrome extension.
-- Added a clear unsupported result for `oyb fill document.pdf` while PDF detection and writing remain future work.
+- Added a reviewed-field PDF experiment that fills approved text fields in a prepared AcroForm copy and verifies stored values and visible appearances.
+- Kept bare `oyb fill document.pdf` unsupported until PDF detection and field creation are available.
 
 ## 0.6.0 — 2026-09-27
 

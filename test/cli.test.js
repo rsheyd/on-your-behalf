@@ -43,6 +43,18 @@ test("CLI requires its provider key without making a request", async () => {
 test("CLI fill reports unsupported PDF operation without reading the file or using a key", async () => {
   const { dependencies, errors, calls } = harness();
   assert.equal(await runCli(["fill", "document.pdf"], dependencies), 2);
-  assert.match(errors.join(""), /cannot fill PDF forms yet/);
+  assert.match(errors.join(""), /needs a reviewed field map/);
   assert.equal(calls.length, 0);
+});
+
+test("CLI routes a reviewed PDF fill with the selected environment key", async () => {
+  const { dependencies, output } = harness({ env: { OPENAI_API_KEY: "private-test-key" } });
+  let payload;
+  dependencies.fillPdf = async options => { payload = options; return { output: options.outputPath, filled: 1 }; };
+  const code = await runCli(["fill", "prepared.pdf", "--field-map", "reviewed.json", "--profile", "profile.txt", "--provider", "openai", "--output", "filled.pdf"], dependencies);
+  assert.equal(code, 0);
+  assert.equal(payload.apiKey, "private-test-key");
+  assert.equal(payload.mapPath, "reviewed.json");
+  assert.equal(payload.outputPath, "filled.pdf");
+  assert.doesNotMatch(output.join(""), /private-test-key/);
 });
