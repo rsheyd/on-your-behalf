@@ -58,3 +58,28 @@ test("CLI routes a reviewed PDF fill with the selected environment key", async (
   assert.equal(payload.outputPath, "filled.pdf");
   assert.doesNotMatch(output.join(""), /private-test-key/);
 });
+
+test("CLI uses imported sources by default for suggestions and PDF filling", async () => {
+  const { dependencies, calls } = harness({ env: { OPENAI_API_KEY: "test-key" } });
+  dependencies.loadSources = async () => ({ profile: "Synthetic imported profile", supportingDocuments: [{ id: "doc", name: "Reference", text: "Synthetic reference" }] });
+  assert.equal(await runCli(["suggest", "--fields", "form.json", "--provider", "openai"], dependencies), 0);
+  assert.equal(calls[0].profile, "Synthetic imported profile");
+  assert.equal(calls[0].supportingDocuments.length, 1);
+  let fillPayload;
+  dependencies.fillPdf = async payload => { fillPayload = payload; return { filled: 1 }; };
+  assert.equal(await runCli(["fill", "prepared.pdf", "--field-map", "reviewed.json", "--provider", "openai", "--output", "filled.pdf"], dependencies), 0);
+  assert.equal(fillPayload.profile, "Synthetic imported profile");
+  assert.equal(fillPayload.supportingDocuments.length, 1);
+  assert.equal(await runCli(["fill", "prepared.pdf", "--field-map", "reviewed.json", "--provider", "openai", "--output", "other.pdf", "--profile", "profile.txt"], dependencies), 0);
+  assert.equal(fillPayload.profilePath, "profile.txt");
+  assert.equal(fillPayload.supportingDocuments, undefined);
+});
+
+test("CLI imports an export without printing its contents", async () => {
+  const { dependencies, output } = harness();
+  let zipPath;
+  dependencies.importSources = async path => { zipPath = path; return { location: "/private/data/profile.json", supportingDocuments: 2, enabledDocuments: 1 }; };
+  assert.equal(await runCli(["import-profile", "export.zip"], dependencies), 0);
+  assert.equal(zipPath, "export.zip");
+  assert.match(output.join(""), /1 enabled/);
+});

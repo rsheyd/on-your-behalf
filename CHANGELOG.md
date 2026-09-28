@@ -2,6 +2,7 @@
 
 ## 0.6.1 — Unreleased
 
+- Added a saved-profile ZIP export in extension Settings and `oyb import-profile` for private CLI storage; CLI suggestions and PDF fills now use the imported profile and enabled supporting documents by default.
 - Added an early Node CLI that generates reviewed suggestions from a text profile and a JSON field list using a provider API key from an environment variable.
 - Shared prompt, provider request, and response validation orchestration between the CLI and Chrome extension.
 - Added a reviewed-field PDF experiment that fills approved text fields in a prepared AcroForm copy and verifies stored values and visible appearances.

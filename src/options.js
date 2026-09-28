@@ -1,6 +1,7 @@
 import { defaultModel, PROVIDERS, providerErrorMessage, testProviderConnection } from "./providers.js";
 import { importDocumentFile } from "./document-import.js";
 import { normalizeSupportingDocuments, validateSupportingDocuments } from "./supporting-documents.js";
+import { createProfileExport } from "./profile-export.js";
 
 const form = document.querySelector("#settings-form");
 const profile = document.querySelector("#profile");
@@ -19,6 +20,8 @@ const resetModel = document.querySelector("#reset-model");
 const status = document.querySelector("#status");
 const documentFile = document.querySelector("#document-file");
 const importStatus = document.querySelector("#import-status");
+const exportCliButton = document.querySelector("#export-cli-profile");
+const exportCliStatus = document.querySelector("#export-cli-status");
 const supportingFilesInput = document.querySelector("#supporting-files");
 const supportingImportStatus = document.querySelector("#supporting-import-status");
 const supportingDocumentsList = document.querySelector("#supporting-documents");
@@ -47,6 +50,7 @@ initialize();
 providerInputs.forEach(input => input.addEventListener("change", changeProvider));
 form.addEventListener("submit", save);
 documentFile.addEventListener("change", importDocument);
+exportCliButton.addEventListener("click", exportCliProfile);
 supportingFilesInput.addEventListener("change", importSupportingFiles);
 startTemplate.addEventListener("click", insertStarterTemplate);
 toggleKey.addEventListener("click", toggleKeyVisibility);
@@ -64,6 +68,24 @@ async function initialize() {
   apiKeys = saved.apiKeys || {};
   models[previousProvider] = saved.model || defaultModel(previousProvider);
   renderProvider();
+}
+
+async function exportCliProfile() {
+  try {
+    const saved = await chrome.storage.local.get(["profile", "supportingDocuments"]);
+    const blob = createProfileExport(saved.profile || "", saved.supportingDocuments || []);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "oyb-profile-export.zip";
+    document.body.append(anchor);
+    anchor.click();
+    anchor.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    exportCliStatus.textContent = "Saved settings exported. Keep this ZIP private; it contains your profile and supporting text.";
+  } catch (error) {
+    exportCliStatus.textContent = error instanceof Error ? error.message : "Could not export profile.";
+  }
 }
 
 function selectedProvider() {

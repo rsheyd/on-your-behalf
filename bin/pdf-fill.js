@@ -32,15 +32,15 @@ export async function writePdfFields({ inputPath, outputPath, values }, { python
   return JSON.parse(stdout);
 }
 
-export async function runPdfFill({ inputPath, outputPath, mapPath, profilePath, provider, apiKey, model = "" }, { read = readFile, fileExists = access, analyze = analyzeForm, writer = writePdfFields } = {}) {
+export async function runPdfFill({ inputPath, outputPath, mapPath, profilePath, profile: suppliedProfile = "", supportingDocuments = [], provider, apiKey, model = "" }, { read = readFile, fileExists = access, analyze = analyzeForm, writer = writePdfFields } = {}) {
   if (resolve(inputPath) === resolve(outputPath)) throw new Error("Choose an output path different from the input PDF.");
   try { await fileExists(outputPath); throw new Error("The output PDF already exists. Choose a new path."); } catch (error) { if (error.code !== "ENOENT") throw error; }
-  const [pdfBytes, mapText, profile] = await Promise.all([read(inputPath), read(mapPath, "utf8"), read(profilePath, "utf8")]);
+  const [pdfBytes, mapText, profile] = await Promise.all([read(inputPath), read(mapPath, "utf8"), profilePath ? read(profilePath, "utf8") : suppliedProfile]);
   let map;
   try { map = JSON.parse(mapText); } catch { throw new Error("The reviewed field map is not valid JSON."); }
   const pdfHash = createHash("sha256").update(pdfBytes).digest("hex");
   const { page, fields } = validateReviewedMap(map, pdfHash);
-  const analysis = await analyze({ profile, provider, apiKey, model, page, fields, answeringPosture: "leave_uncertain_open" });
+  const analysis = await analyze({ profile, supportingDocuments, provider, apiKey, model, page, fields, answeringPosture: "leave_uncertain_open" });
   const allowed = new Set(fields.map(field => field.fieldId));
   const values = Object.fromEntries((analysis.suggestions || []).filter(item => allowed.has(item.fieldId) && typeof item.value === "string" && item.value.trim()).map(item => [item.fieldId, item.value]));
   if (!Object.keys(values).length) throw new Error("OYB found no supported answers to write; the input PDF was unchanged.");
