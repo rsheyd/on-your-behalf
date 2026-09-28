@@ -2,6 +2,7 @@
 
 ## 0.6.1 — Unreleased
 
+- Added `oyb extract-questions` to create a reviewable Markdown worksheet from text PDFs or scanned PDFs using local OCR.
 - Added optional PDF field-review reports with nearby text or OCR label guesses, plus explicit selection of approved text fields for a fill-compatible map.
 - Added a read-only `oyb inspect` field inventory for PDFs with existing AcroForm fields.
 - Renamed the CLI answer preview command to `oyb preview-answers`; `oyb suggest` remains an alias.

@@ -118,6 +118,16 @@ node bin/oyb.js preview-answers --fields form.json --provider openai
 
 This prints validated suggestions as JSON; it does not fill a document. Review any output you redirect to a file because it can contain personal answers.
 
+### Extract questions into Markdown
+
+To create a draft Markdown worksheet of possible questions and answer fields from a PDF, run:
+
+```bash
+node bin/oyb.js extract-questions document.pdf --output questions.md
+```
+
+The command reads embedded PDF text or uses Tesseract OCR for scanned pages. It creates a new file with page references, stable question IDs, blank answers, and extracted page text for checking missed or misread items. Install Python's `pdfplumber`, Tesseract, and Poppler first. Existing output files are never overwritten. Review the worksheet against the PDF: extraction is provisional, and this command does not create PDF fields, map answers back to a PDF, use your profile, or contact an AI provider. Keep worksheets containing personal answers private.
+
 ### Fill a prepared PDF
 
 The command `oyb fill document.pdf` alone returns “OYB needs a reviewed field map” because the CLI cannot yet detect and create trustworthy fields in an arbitrary PDF. For the Mentor Packet experiment in this checkout, the prepared PDF and its reviewed page-one map are in the Git-ignored `roman-only/pdf-experiments/mentor-packet/` directory. Install Python's `pypdf` package if needed, then run from the repository root:

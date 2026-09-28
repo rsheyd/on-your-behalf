@@ -66,6 +66,16 @@ test("CLI routes PDF review and explicit field approval without provider access"
   assert.equal(JSON.parse(output.pop()).approved, 2);
 });
 
+test("CLI extracts a Markdown question worksheet without profile or provider access", async () => {
+  const { dependencies, output, calls } = harness();
+  let paths;
+  dependencies.extractQuestions = async (input, destination) => { paths = { input, destination }; return "Created questions.md"; };
+  assert.equal(await runCli(["extract-questions", "document.pdf", "--output", "questions.md"], dependencies), 0);
+  assert.deepEqual(paths, { input: "document.pdf", destination: "questions.md" });
+  assert.match(output.join(""), /Created questions.md/);
+  assert.equal(calls.length, 0);
+});
+
 test("CLI routes a reviewed PDF fill with the selected environment key", async () => {
   const { dependencies, output } = harness({ env: { OPENAI_API_KEY: "private-test-key" } });
   let payload;
